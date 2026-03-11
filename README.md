@@ -21,12 +21,13 @@ micro_wav::WAVHeaderParser parser;
 size_t bytes_consumed = 0;
 auto result = parser.parse(data, len, bytes_consumed);
 
+// After HEADER_READY, remaining bytes (input + bytes_consumed) are audio data
 if (result == micro_wav::WAVParseResult::HEADER_READY) {
     uint32_t rate = parser.sample_rate();
     uint16_t channels = parser.num_channels();
     uint16_t bps = parser.bits_per_sample();
     uint16_t fmt = parser.audio_format();       // 1=PCM, 3=IEEE float, etc.
-    uint32_t data_size = parser.data_bytes_left();
+    uint32_t data_size = parser.data_chunk_size();
 }
 ```
 

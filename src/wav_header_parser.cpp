@@ -15,8 +15,25 @@
 #include "micro_wav/wav_header_parser.h"
 
 #include <algorithm>
+#include <cstring>
 
 namespace micro_wav {
+
+static uint16_t read_u16(const uint8_t* buf) {
+    return static_cast<uint16_t>(buf[0] | (buf[1] << 8));
+}
+
+static uint32_t read_u32(const uint8_t* buf) {
+    return static_cast<uint32_t>(buf[0]) | (static_cast<uint32_t>(buf[1]) << 8) |
+           (static_cast<uint32_t>(buf[2]) << 16) | (static_cast<uint32_t>(buf[3]) << 24);
+}
+
+static bool tag_equals(const uint8_t* buf, const char* tag) {
+    return memcmp(buf, tag, 4) == 0;
+}
+
+// Round up to even for RIFF chunk padding
+static uint32_t pad_to_even(uint32_t size) { return (size + 1) & ~static_cast<uint32_t>(1); }
 
 void WAVHeaderParser::reset() {
     buf_len_ = 0;
@@ -29,7 +46,7 @@ void WAVHeaderParser::reset() {
     num_channels_ = 0;
     bits_per_sample_ = 0;
     audio_format_ = 0;
-    data_bytes_left_ = 0;
+    data_chunk_size_ = 0;
 }
 
 WAVParseResult WAVHeaderParser::parse(const uint8_t* input, size_t input_len,
@@ -79,7 +96,7 @@ WAVParseResult WAVHeaderParser::parse(const uint8_t* input, size_t input_len,
 WAVParseResult WAVHeaderParser::process_field() {
     switch (state_) {
         case State::RIFF_TAG:
-            if (!tag_equals("RIFF")) {
+            if (!tag_equals(buf_, "RIFF")) {
                 state_ = State::ERROR;
                 return WAVParseResult::ERROR_NO_RIFF;
             }
@@ -94,7 +111,7 @@ WAVParseResult WAVHeaderParser::process_field() {
             break;
 
         case State::WAVE_TAG:
-            if (!tag_equals("WAVE")) {
+            if (!tag_equals(buf_, "WAVE")) {
                 state_ = State::ERROR;
                 return WAVParseResult::ERROR_NO_WAVE;
             }
@@ -103,9 +120,9 @@ WAVParseResult WAVHeaderParser::process_field() {
             break;
 
         case State::CHUNK_TAG:
-            if (tag_equals("fmt ")) {
+            if (tag_equals(buf_, "fmt ")) {
                 pending_chunk_type_ = PendingChunk::FMT;
-            } else if (tag_equals("data")) {
+            } else if (tag_equals(buf_, "data")) {
                 pending_chunk_type_ = PendingChunk::DATA;
             } else {
                 pending_chunk_type_ = PendingChunk::UNKNOWN;
@@ -115,18 +132,22 @@ WAVParseResult WAVHeaderParser::process_field() {
             break;
 
         case State::CHUNK_SIZE:
-            current_chunk_size_ = read_u32();
+            current_chunk_size_ = read_u32(buf_);
             switch (pending_chunk_type_) {
                 case PendingChunk::FMT:
+                    if (current_chunk_size_ < 16) {
+                        state_ = State::ERROR;
+                        return WAVParseResult::ERROR_FAILED;
+                    }
                     state_ = State::FMT_AUDIO_FORMAT;
                     buf_needed_ = 2;
                     break;
                 case PendingChunk::DATA:
-                    data_bytes_left_ = current_chunk_size_;
+                    data_chunk_size_ = current_chunk_size_;
                     state_ = State::IN_DATA;
                     return WAVParseResult::HEADER_READY;
                 case PendingChunk::UNKNOWN:
-                    skip_bytes_ = current_chunk_size_;
+                    skip_bytes_ = pad_to_even(current_chunk_size_);
                     state_ = State::CHUNK_TAG;
                     buf_needed_ = 4;
                     break;
@@ -134,19 +155,19 @@ WAVParseResult WAVHeaderParser::process_field() {
             break;
 
         case State::FMT_AUDIO_FORMAT:
-            audio_format_ = read_u16();
+            audio_format_ = read_u16(buf_);
             state_ = State::FMT_NUM_CHANNELS;
             buf_needed_ = 2;
             break;
 
         case State::FMT_NUM_CHANNELS:
-            num_channels_ = read_u16();
+            num_channels_ = read_u16(buf_);
             state_ = State::FMT_SAMPLE_RATE;
             buf_needed_ = 4;
             break;
 
         case State::FMT_SAMPLE_RATE:
-            sample_rate_ = read_u32();
+            sample_rate_ = read_u32(buf_);
             state_ = State::FMT_BYTE_RATE;
             buf_needed_ = 4;
             break;
@@ -164,11 +185,12 @@ WAVParseResult WAVHeaderParser::process_field() {
             break;
 
         case State::FMT_BITS_PER_SAMPLE:
-            bits_per_sample_ = read_u16();
+            bits_per_sample_ = read_u16(buf_);
             // fmt chunk has 16 bytes of standard fields.
             // If the chunk is larger, skip the extra bytes.
+            // Use pad_to_even for RIFF alignment.
             if (current_chunk_size_ > 16) {
-                skip_bytes_ = current_chunk_size_ - 16;
+                skip_bytes_ = pad_to_even(current_chunk_size_) - 16;
             }
             state_ = State::CHUNK_TAG;
             buf_needed_ = 4;

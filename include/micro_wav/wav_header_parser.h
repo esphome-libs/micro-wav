@@ -19,7 +19,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 
 namespace micro_wav {
 
@@ -34,6 +33,7 @@ enum class WAVParseResult : int8_t {
 class WAVHeaderParser {
  public:
     /// Feed bytes to the parser. Returns bytes consumed via output param.
+    /// After HEADER_READY, any remaining bytes in the input are audio data.
     WAVParseResult parse(const uint8_t* input, size_t input_len,
                          size_t& bytes_consumed);
 
@@ -45,7 +45,7 @@ class WAVHeaderParser {
     uint16_t num_channels() const { return num_channels_; }
     uint16_t bits_per_sample() const { return bits_per_sample_; }
     uint16_t audio_format() const { return audio_format_; }
-    uint32_t data_bytes_left() const { return data_bytes_left_; }
+    uint32_t data_chunk_size() const { return data_chunk_size_; }
 
  private:
     enum class State : uint8_t {
@@ -74,22 +74,6 @@ class WAVHeaderParser {
     // parsing, HEADER_READY when done, or an error.
     WAVParseResult process_field();
 
-    uint16_t read_u16() const {
-        uint16_t v;
-        memcpy(&v, buf_, 2);
-        return v;
-    }
-
-    uint32_t read_u32() const {
-        uint32_t v;
-        memcpy(&v, buf_, 4);
-        return v;
-    }
-
-    bool tag_equals(const char* tag) const {
-        return memcmp(buf_, tag, 4) == 0;
-    }
-
     // Accumulator
     uint8_t buf_[4]{};
     uint8_t buf_len_{0};
@@ -106,7 +90,7 @@ class WAVHeaderParser {
     uint16_t num_channels_{0};
     uint16_t bits_per_sample_{0};
     uint16_t audio_format_{0};
-    uint32_t data_bytes_left_{0};
+    uint32_t data_chunk_size_{0};
 };
 
 }  // namespace micro_wav
