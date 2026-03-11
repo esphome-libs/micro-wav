@@ -1,0 +1,32 @@
+{
+  "name": "micro-wav",
+  "version": "0.1.0",
+  "description": "Streaming WAV header parser optimized for embedded devices",
+  "keywords": ["wav", "audio", "parser", "esp32", "embedded", "streaming"],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/esphome-libs/micro-wav.git"
+  },
+  "authors": [
+    {
+      "name": "Kevin Ahrendt",
+      "email": "kevin.ahrendt@openhomefoundation.org",
+      "maintainer": true
+    }
+  ],
+  "frameworks": ["espidf"],
+  "platforms": ["espressif32"],
+  "export": {
+    "include": [
+      "src/*",
+      "include/*",
+      "cmake/*",
+      "CMakeLists.txt",
+      "LICENSE",
+      "README.md",
+      "library.json",
+      "idf_component.yml"
+    ]
+  }
+}
