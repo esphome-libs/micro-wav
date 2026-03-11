@@ -34,6 +34,7 @@ if (result == micro_wav::WAVParseResult::HEADER_READY) {
 ## Integration
 
 **ESP-IDF Component Manager:**
+
 ```yaml
 dependencies:
   micro-wav:
@@ -41,11 +42,13 @@ dependencies:
 ```
 
 **PlatformIO:**
+
 ```ini
 lib_deps = https://github.com/esphome-libs/micro-wav.git
 ```
 
 **CMake subdirectory:**
+
 ```cmake
 add_subdirectory(micro-wav)
 target_link_libraries(your_target PRIVATE micro_wav)
