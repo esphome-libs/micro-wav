@@ -1,6 +1,6 @@
 # microWAV
 
-Streaming WAV header parser for embedded devices. Parses WAV headers byte-by-byte with a 4-byte internal accumulator — no buffering required.
+Streaming WAV header parser for embedded devices. Parses WAV headers byte-by-byte with a 4-byte internal accumulator. No buffering required.
 
 ## Features
 
