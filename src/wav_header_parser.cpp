@@ -33,7 +33,9 @@ static bool tag_equals(const uint8_t* buf, const char* tag) {
 }
 
 // Round up to even for RIFF chunk padding
-static uint32_t pad_to_even(uint32_t size) { return (size + 1) & ~static_cast<uint32_t>(1); }
+static uint32_t pad_to_even(uint32_t size) {
+    return (size + 1) & ~static_cast<uint32_t>(1);
+}
 
 void WAVHeaderParser::reset() {
     buf_len_ = 0;
@@ -64,8 +66,7 @@ WAVParseResult WAVHeaderParser::parse(const uint8_t* input, size_t input_len,
         // Skip phase
         if (skip_bytes_ > 0) {
             size_t can_skip =
-                std::min(static_cast<size_t>(skip_bytes_),
-                         input_len - bytes_consumed);
+                std::min(static_cast<size_t>(skip_bytes_), input_len - bytes_consumed);
             skip_bytes_ -= static_cast<uint32_t>(can_skip);
             bytes_consumed += can_skip;
             if (skip_bytes_ > 0) {

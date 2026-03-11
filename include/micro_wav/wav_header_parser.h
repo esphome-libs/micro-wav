@@ -23,31 +23,40 @@
 namespace micro_wav {
 
 enum class WAVParseResult : int8_t {
-    ERROR_NO_RIFF  = -3,
-    ERROR_NO_WAVE  = -2,
-    ERROR_FAILED   = -1,
-    HEADER_READY   =  0,
-    NEED_MORE_DATA =  1,
+    ERROR_NO_RIFF = -3,
+    ERROR_NO_WAVE = -2,
+    ERROR_FAILED = -1,
+    HEADER_READY = 0,
+    NEED_MORE_DATA = 1,
 };
 
 class WAVHeaderParser {
- public:
+public:
     /// Feed bytes to the parser. Returns bytes consumed via output param.
     /// After HEADER_READY, any remaining bytes in the input are audio data.
-    WAVParseResult parse(const uint8_t* input, size_t input_len,
-                         size_t& bytes_consumed);
+    WAVParseResult parse(const uint8_t* input, size_t input_len, size_t& bytes_consumed);
 
     /// Reset the parser to its initial state.
     void reset();
 
     // Accessors (valid after HEADER_READY)
-    uint32_t sample_rate() const { return sample_rate_; }
-    uint16_t num_channels() const { return num_channels_; }
-    uint16_t bits_per_sample() const { return bits_per_sample_; }
-    uint16_t audio_format() const { return audio_format_; }
-    uint32_t data_chunk_size() const { return data_chunk_size_; }
+    uint32_t sample_rate() const {
+        return sample_rate_;
+    }
+    uint16_t num_channels() const {
+        return num_channels_;
+    }
+    uint16_t bits_per_sample() const {
+        return bits_per_sample_;
+    }
+    uint16_t audio_format() const {
+        return audio_format_;
+    }
+    uint32_t data_chunk_size() const {
+        return data_chunk_size_;
+    }
 
- private:
+private:
     enum class State : uint8_t {
         RIFF_TAG,
         RIFF_SIZE,
