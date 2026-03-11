@@ -16,7 +16,6 @@ function(wav_configure_host TARGET SOURCE_DIR)
     )
 
     target_compile_options(${TARGET} PRIVATE
-        -O2
         -Wall
         -Wextra
         -Wpedantic

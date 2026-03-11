@@ -9,7 +9,6 @@ set(__wav_esp_idf_defined TRUE)
 function(wav_configure_esp_idf COMPONENT_LIB COMPONENT_DIR)
     # Set optimization and warning flags
     target_compile_options(${COMPONENT_LIB} PRIVATE
-        -O2
         -Wall
         -Wextra
         -Wshadow
