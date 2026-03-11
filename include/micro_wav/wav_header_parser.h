@@ -22,12 +22,12 @@
 
 namespace micro_wav {
 
-enum class WAVParseResult : int8_t {
-    ERROR_NO_RIFF = -3,
-    ERROR_NO_WAVE = -2,
-    ERROR_FAILED = -1,
-    HEADER_READY = 0,
-    NEED_MORE_DATA = 1,
+enum WAVParseResult : int8_t {
+    WAV_PARSER_ERROR_NO_RIFF = -3,
+    WAV_PARSER_ERROR_NO_WAVE = -2,
+    WAV_PARSER_ERROR_FAILED = -1,
+    WAV_PARSER_HEADER_READY = 0,
+    WAV_PARSER_NEED_MORE_DATA = 1,
 };
 
 class WAVHeaderParser {

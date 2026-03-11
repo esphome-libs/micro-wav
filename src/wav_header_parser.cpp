@@ -56,10 +56,10 @@ WAVParseResult WAVHeaderParser::parse(const uint8_t* input, size_t input_len,
     bytes_consumed = 0;
 
     if (state_ == State::IN_DATA) {
-        return WAVParseResult::HEADER_READY;
+        return WAV_PARSER_HEADER_READY;
     }
     if (state_ == State::ERROR) {
-        return WAVParseResult::ERROR_FAILED;
+        return WAV_PARSER_ERROR_FAILED;
     }
 
     while (bytes_consumed < input_len) {
@@ -70,7 +70,7 @@ WAVParseResult WAVHeaderParser::parse(const uint8_t* input, size_t input_len,
             skip_bytes_ -= static_cast<uint32_t>(can_skip);
             bytes_consumed += can_skip;
             if (skip_bytes_ > 0) {
-                return WAVParseResult::NEED_MORE_DATA;
+                return WAV_PARSER_NEED_MORE_DATA;
             }
             continue;
         }
@@ -80,18 +80,18 @@ WAVParseResult WAVHeaderParser::parse(const uint8_t* input, size_t input_len,
             buf_[buf_len_++] = input[bytes_consumed++];
         }
         if (buf_len_ < buf_needed_) {
-            return WAVParseResult::NEED_MORE_DATA;
+            return WAV_PARSER_NEED_MORE_DATA;
         }
 
         // Process phase
         WAVParseResult result = process_field();
         buf_len_ = 0;
-        if (result != WAVParseResult::NEED_MORE_DATA) {
+        if (result != WAV_PARSER_NEED_MORE_DATA) {
             return result;
         }
     }
 
-    return WAVParseResult::NEED_MORE_DATA;
+    return WAV_PARSER_NEED_MORE_DATA;
 }
 
 WAVParseResult WAVHeaderParser::process_field() {
@@ -99,7 +99,7 @@ WAVParseResult WAVHeaderParser::process_field() {
         case State::RIFF_TAG:
             if (!tag_equals(buf_, "RIFF")) {
                 state_ = State::ERROR;
-                return WAVParseResult::ERROR_NO_RIFF;
+                return WAV_PARSER_ERROR_NO_RIFF;
             }
             state_ = State::RIFF_SIZE;
             buf_needed_ = 4;
@@ -114,7 +114,7 @@ WAVParseResult WAVHeaderParser::process_field() {
         case State::WAVE_TAG:
             if (!tag_equals(buf_, "WAVE")) {
                 state_ = State::ERROR;
-                return WAVParseResult::ERROR_NO_WAVE;
+                return WAV_PARSER_ERROR_NO_WAVE;
             }
             state_ = State::CHUNK_TAG;
             buf_needed_ = 4;
@@ -138,7 +138,7 @@ WAVParseResult WAVHeaderParser::process_field() {
                 case PendingChunk::FMT:
                     if (current_chunk_size_ < 16) {
                         state_ = State::ERROR;
-                        return WAVParseResult::ERROR_FAILED;
+                        return WAV_PARSER_ERROR_FAILED;
                     }
                     state_ = State::FMT_AUDIO_FORMAT;
                     buf_needed_ = 2;
@@ -146,7 +146,7 @@ WAVParseResult WAVHeaderParser::process_field() {
                 case PendingChunk::DATA:
                     data_chunk_size_ = current_chunk_size_;
                     state_ = State::IN_DATA;
-                    return WAVParseResult::HEADER_READY;
+                    return WAV_PARSER_HEADER_READY;
                 case PendingChunk::UNKNOWN:
                     skip_bytes_ = pad_to_even(current_chunk_size_);
                     state_ = State::CHUNK_TAG;
@@ -198,13 +198,13 @@ WAVParseResult WAVHeaderParser::process_field() {
             break;
 
         case State::IN_DATA:
-            return WAVParseResult::HEADER_READY;
+            return WAV_PARSER_HEADER_READY;
 
         case State::ERROR:
-            return WAVParseResult::ERROR_FAILED;
+            return WAV_PARSER_ERROR_FAILED;
     }
 
-    return WAVParseResult::NEED_MORE_DATA;
+    return WAV_PARSER_NEED_MORE_DATA;
 }
 
 }  // namespace micro_wav

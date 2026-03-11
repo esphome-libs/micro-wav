@@ -22,7 +22,7 @@ size_t bytes_consumed = 0;
 auto result = parser.parse(data, len, bytes_consumed);
 
 // After HEADER_READY, remaining bytes (input + bytes_consumed) are audio data
-if (result == micro_wav::WAVParseResult::HEADER_READY) {
+if (result == micro_wav::WAV_PARSER_HEADER_READY) {
     uint32_t rate = parser.sample_rate();
     uint16_t channels = parser.num_channels();
     uint16_t bps = parser.bits_per_sample();
