@@ -1,6 +1,6 @@
 {
   "name": "micro-wav",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Streaming WAV header parser optimized for embedded devices",
   "keywords": ["wav", "audio", "parser", "esp32", "embedded", "streaming"],
   "license": "Apache-2.0",

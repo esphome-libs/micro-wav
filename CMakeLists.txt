@@ -56,7 +56,7 @@ if(ESP_IDF_BUILD)
 # ==============================================================================
 
 else()
-    project(micro_wav VERSION 0.1.0 LANGUAGES CXX)
+    project(micro_wav VERSION 1.0.0 LANGUAGES CXX)
 
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/host.cmake)
 
