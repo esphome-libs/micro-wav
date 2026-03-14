@@ -23,10 +23,11 @@
 namespace micro_wav {
 
 enum WAVDecoderResult : int8_t {
-    WAV_DECODER_ERROR_NO_RIFF = -4,
-    WAV_DECODER_ERROR_NO_WAVE = -3,
-    WAV_DECODER_ERROR_FAILED = -2,
-    WAV_DECODER_ERROR_UNSUPPORTED = -1,
+    WAV_DECODER_ERROR_NO_RIFF = -5,
+    WAV_DECODER_ERROR_NO_WAVE = -4,
+    WAV_DECODER_ERROR_FAILED = -3,
+    WAV_DECODER_ERROR_UNSUPPORTED = -2,
+    WAV_DECODER_WARNING_OUTPUT_TOO_SMALL = -1,
     WAV_DECODER_SUCCESS = 0,
     WAV_DECODER_HEADER_READY = 1,
     WAV_DECODER_END_OF_STREAM = 2,
@@ -61,6 +62,8 @@ public:
     uint16_t num_channels() const {
         return num_channels_;
     }
+    /// Returns the output bit depth. For A-law/mu-law sources this is 16
+    /// (decoded from 8-bit), not the original WAV header value.
     uint16_t bits_per_sample() const {
         return bits_per_sample_;
     }

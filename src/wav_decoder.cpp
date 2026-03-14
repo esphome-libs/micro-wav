@@ -88,6 +88,10 @@ static int16_t decode_mulaw_sample(uint8_t mu_val) {
 static int32_t decode_float_to_int32(const uint8_t* bytes) {
     float f = 0.0F;
     memcpy(&f, bytes, sizeof(f));
+    // NaN check: NaN != NaN is true; treat NaN as silence
+    if (f != f) {  // NOLINT(misc-redundant-expression)
+        return 0;
+    }
     if (f > 1.0F) {
         f = 1.0F;
     }
@@ -358,6 +362,9 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
 
         switch (audio_format()) {
             case WAV_FORMAT_PCM:
+                if (bits_per_sample_ == 0 || bits_per_sample_ % 8 != 0) {
+                    return WAV_DECODER_ERROR_UNSUPPORTED;
+                }
                 bytes_per_input_sample_ = static_cast<uint8_t>(bits_per_sample_ / 8);
                 if (bits_per_sample_ == 8) {
                     bytes_per_output_sample_ = 1;
@@ -396,7 +403,7 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
     }
 
     if (output == nullptr || output_size_bytes < bytes_per_output_sample_) {
-        return WAV_DECODER_HEADER_READY;
+        return WAV_DECODER_WARNING_OUTPUT_TOO_SMALL;
     }
 
     WAVAudioFormat fmt = audio_format();

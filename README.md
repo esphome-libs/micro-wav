@@ -43,7 +43,7 @@ if (result == micro_wav::WAV_DECODER_HEADER_READY) {
 
 ## Result Codes
 
-`decode()` returns `WAVDecoderResult`: non-negative values indicate success/informational states, negative values indicate errors. See `wav_decoder.h` for the full enum.
+`decode()` returns `WAVDecoderResult`: non-negative values indicate success/informational states, negative values indicate errors or warnings. See `wav_decoder.h` for the full enum.
 
 | Value | Description |
 |---|---|
@@ -51,6 +51,7 @@ if (result == micro_wav::WAV_DECODER_HEADER_READY) {
 | `WAV_DECODER_HEADER_READY` | Header fully parsed; stream info available |
 | `WAV_DECODER_END_OF_STREAM` | All data chunk bytes consumed |
 | `WAV_DECODER_NEED_MORE_DATA` | More bytes needed; call `decode()` again with additional data |
+| `WAV_DECODER_WARNING_OUTPUT_TOO_SMALL` | Output buffer is null or too small for one sample |
 | `WAV_DECODER_ERROR_UNSUPPORTED` | Audio format not supported (e.g., 64-bit float, unknown codec) |
 | `WAV_DECODER_ERROR_FAILED` | Generic decode failure (e.g., malformed chunk) |
 | `WAV_DECODER_ERROR_NO_WAVE` | RIFF container found but missing WAVE identifier |
