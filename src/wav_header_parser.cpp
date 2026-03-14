@@ -19,6 +19,17 @@
 
 namespace micro_wav {
 
+static constexpr uint16_t WAVE_FORMAT_EXTENSIBLE = 0xFFFE;
+
+// Standard fmt fields (audioFormat through bitsPerSample) = 16 bytes.
+// Extensible header adds cbSize(2) + validBitsPerSample(2) + channelMask(4) +
+// subFormat(2 used + 14 skipped) = 24 bytes, for a total of 40 bytes.
+static constexpr uint32_t FMT_STANDARD_SIZE = 16;
+static constexpr uint32_t FMT_EXTENSIBLE_MIN_SIZE = 40;
+// Bytes consumed before SubFormat GUID's remaining 14 bytes:
+// 16 (standard) + 8 (cbSize + validBits + channelMask) + 2 (subFormat tag) = 26
+static constexpr uint32_t FMT_EXT_CONSUMED_BEFORE_GUID_TAIL = 26;
+
 static uint16_t read_u16(const uint8_t* buf) {
     return static_cast<uint16_t>(buf[0] | (buf[1] << 8));
 }
@@ -136,7 +147,7 @@ WAVParseResult WAVHeaderParser::process_field() {
             current_chunk_size_ = read_u32(buf_);
             switch (pending_chunk_type_) {
                 case PendingChunk::FMT:
-                    if (current_chunk_size_ < 16) {
+                    if (current_chunk_size_ < FMT_STANDARD_SIZE) {
                         state_ = State::ERROR;
                         return WAV_PARSER_ERROR_FAILED;
                     }
@@ -187,11 +198,33 @@ WAVParseResult WAVHeaderParser::process_field() {
 
         case State::FMT_BITS_PER_SAMPLE:
             bits_per_sample_ = read_u16(buf_);
-            // fmt chunk has 16 bytes of standard fields.
-            // If the chunk is larger, skip the extra bytes.
-            // Use pad_to_even for RIFF alignment.
-            if (current_chunk_size_ > 16) {
-                skip_bytes_ = pad_to_even(current_chunk_size_) - 16;
+            if (audio_format_ == WAVE_FORMAT_EXTENSIBLE &&
+                current_chunk_size_ >= FMT_EXTENSIBLE_MIN_SIZE) {
+                // WAVE_FORMAT_EXTENSIBLE: skip cbSize(2) + validBitsPerSample(2) +
+                // channelMask(4) = 8 bytes, then read the SubFormat GUID's first
+                // two bytes to get the actual audio format.
+                skip_bytes_ = 8;
+                state_ = State::FMT_EXT_SUB_FORMAT;
+                buf_needed_ = 2;
+            } else if (audio_format_ == WAVE_FORMAT_EXTENSIBLE) {
+                // Extensible format but chunk too small for the required fields
+                state_ = State::ERROR;
+                return WAV_PARSER_ERROR_FAILED;
+            } else if (current_chunk_size_ > FMT_STANDARD_SIZE) {
+                skip_bytes_ = pad_to_even(current_chunk_size_) - FMT_STANDARD_SIZE;
+                state_ = State::CHUNK_TAG;
+                buf_needed_ = 4;
+            } else {
+                state_ = State::CHUNK_TAG;
+                buf_needed_ = 4;
+            }
+            break;
+
+        case State::FMT_EXT_SUB_FORMAT:
+            audio_format_ = read_u16(buf_);
+            // Skip remaining 14 bytes of SubFormat GUID + any extra chunk data
+            if (current_chunk_size_ > FMT_EXT_CONSUMED_BEFORE_GUID_TAIL) {
+                skip_bytes_ = pad_to_even(current_chunk_size_) - FMT_EXT_CONSUMED_BEFORE_GUID_TAIL;
             }
             state_ = State::CHUNK_TAG;
             buf_needed_ = 4;

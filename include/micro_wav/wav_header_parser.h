@@ -69,6 +69,7 @@ private:
         FMT_BYTE_RATE,
         FMT_BLOCK_ALIGN,
         FMT_BITS_PER_SAMPLE,
+        FMT_EXT_SUB_FORMAT,
         IN_DATA,
         ERROR,
     };
