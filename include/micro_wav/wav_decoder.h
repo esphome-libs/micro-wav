@@ -13,7 +13,9 @@
 // limitations under the License.
 
 /// @file wav_decoder.h
-/// @brief Streaming WAV decoder with byte-by-byte support
+/// @brief Streaming WAV decoder for resource-constrained embedded devices
+///
+/// Spec: http://soundfile.sapp.org/doc/WaveFormat/
 
 #pragma once
 
@@ -22,103 +24,173 @@
 
 namespace micro_wav {
 
-/// Result codes returned by WAVDecoder::decode().
-/// Negative values indicate errors or warnings; non-negative values indicate progress.
+// ============================================================================
+// Public Types
+// ============================================================================
+
+/// @brief Result codes returned by WAVDecoder::decode()
+/// Positive values indicate success/informational states, negative values indicate errors.
 enum WAVDecoderResult : int8_t {
-    /// Input does not start with a valid RIFF tag.
-    WAV_DECODER_ERROR_NO_RIFF = -6,
-    /// RIFF container does not contain a WAVE form type.
-    WAV_DECODER_ERROR_NO_WAVE = -5,
-    /// Structural error in the WAV file (e.g., fmt chunk too small).
-    WAV_DECODER_ERROR_FAILED = -4,
-    /// Audio format or bit depth is not supported by this decoder.
-    WAV_DECODER_ERROR_UNSUPPORTED = -3,
-    /// Input pointer is null while input length is non-zero.
-    WAV_DECODER_WARNING_INVALID_INPUT = -2,
-    /// Output buffer is null or too small to hold one sample.
-    WAV_DECODER_WARNING_OUTPUT_TOO_SMALL = -1,
-    /// One or more audio samples were decoded into the output buffer.
-    WAV_DECODER_SUCCESS = 0,
-    /// Header parsing is complete; accessors are now valid and the decoder is ready for audio data.
-    WAV_DECODER_HEADER_READY = 1,
-    /// All audio data in the data chunk has been consumed.
-    WAV_DECODER_END_OF_STREAM = 2,
-    /// Not enough input bytes to make progress; supply more data.
-    WAV_DECODER_NEED_MORE_DATA = 3,
+    // Success / informational (>= 0)
+    WAV_DECODER_SUCCESS = 0,         // Audio samples decoded into output buffer
+    WAV_DECODER_HEADER_READY = 1,    // Header parsed, accessors valid, ready for audio data
+    WAV_DECODER_END_OF_STREAM = 2,   // All audio data in the data chunk consumed
+    WAV_DECODER_NEED_MORE_DATA = 3,  // Not enough input bytes; supply more data
+
+    // Errors (< 0)
+    WAV_DECODER_ERROR_NO_RIFF = -6,             // Input does not start with a valid RIFF tag
+    WAV_DECODER_ERROR_NO_WAVE = -5,             // RIFF container missing WAVE form type
+    WAV_DECODER_ERROR_FAILED = -4,              // Structural error (e.g., fmt chunk too small)
+    WAV_DECODER_ERROR_UNSUPPORTED = -3,         // Audio format or bit depth not supported
+    WAV_DECODER_WARNING_INVALID_INPUT = -2,     // Input pointer null with non-zero length
+    WAV_DECODER_WARNING_OUTPUT_TOO_SMALL = -1,  // Output buffer null or too small for one sample
 };
 
-/// Audio format tags recognized by the decoder.
+/// @brief Audio format tags recognized by the decoder
 /// Values match the WAV spec's 16-bit wFormatTag field. WAVE_FORMAT_EXTENSIBLE (0xFFFE) is
 /// resolved to the underlying format via the SubFormat GUID; unrecognized tags map to
 /// WAV_FORMAT_UNKNOWN.
-enum WAVAudioFormat : uint16_t {  // NOLINT(performance-enum-size): matches WAV spec's 16-bit
-                                  // wFormatTag
-    /// Unrecognized or unsupported format tag.
-    WAV_FORMAT_UNKNOWN = 0x0000,
-    /// Linear pulse-code modulation (8/16/24/32-bit).
-    WAV_FORMAT_PCM = 0x0001,
-    /// IEEE 754 floating-point (32-bit).
-    WAV_FORMAT_IEEE_FLOAT = 0x0003,
-    /// ITU-T G.711 A-law (8-bit input, decoded to 16-bit PCM).
-    WAV_FORMAT_ALAW = 0x0006,
-    /// ITU-T G.711 mu-law (8-bit input, decoded to 16-bit PCM).
-    WAV_FORMAT_MULAW = 0x0007,
+enum WAVAudioFormat : uint16_t {     // NOLINT(performance-enum-size): matches WAV spec's 16-bit
+                                     // wFormatTag
+    WAV_FORMAT_UNKNOWN = 0x0000,     // Unrecognized or unsupported format tag
+    WAV_FORMAT_PCM = 0x0001,         // Linear PCM (8/16/24/32-bit)
+    WAV_FORMAT_IEEE_FLOAT = 0x0003,  // IEEE 754 floating-point (32-bit)
+    WAV_FORMAT_ALAW = 0x0006,        // ITU-T G.711 A-law (8-bit input, decoded to 16-bit PCM)
+    WAV_FORMAT_MULAW = 0x0007,       // ITU-T G.711 mu-law (8-bit input, decoded to 16-bit PCM)
 };
 
+// ============================================================================
+// WAVDecoder
+// ============================================================================
+
+/**
+ * @brief Streaming WAV decoder for resource-constrained embedded devices
+ *
+ * Single-pass byte-by-byte WAV decoder with zero dynamic allocation. Supports
+ * PCM (8/16/24/32-bit), G.711 A-law/mu-law, IEEE float 32-bit, and
+ * WAVE_FORMAT_EXTENSIBLE headers.
+ *
+ * Usage:
+ * 1. Create a WAVDecoder instance
+ * 2. Call decode() in a loop, feeding input data and receiving PCM output
+ * 3. Use reset() to decode a new stream
+ *
+ * @code
+ * WAVDecoder decoder;
+ * uint8_t output[512];
+ * size_t consumed = 0, samples = 0;
+ *
+ * while (has_data) {
+ *     auto result = decoder.decode(input, input_len, output, sizeof(output), consumed, samples);
+ *     input += consumed; input_len -= consumed;
+ *
+ *     if (result == WAV_DECODER_HEADER_READY) {
+ *         // Accessors now valid: sample_rate, channels, bits_per_sample, etc.
+ *     } else if (result == WAV_DECODER_SUCCESS) {
+ *         // Process 'samples' decoded samples in output buffer
+ *     } else if (result == WAV_DECODER_NEED_MORE_DATA) {
+ *         // Feed more input data
+ *     } else if (result == WAV_DECODER_END_OF_STREAM) {
+ *         break;
+ *     }
+ * }
+ * @endcode
+ */
 class WAVDecoder {
 public:
-    /// Decodes WAV data: parses header fields, then decodes audio samples.
-    /// The output buffer is ignored during header parsing, so it is safe to pass the same
-    /// buffer throughout. Returns SUCCESS when samples are decoded, END_OF_STREAM when all
-    /// data is consumed.
+    // ========================================
+    // Lifecycle
+    // ========================================
+
+    /// @brief Reset the decoder to its initial state, ready to decode a new stream
+    void reset();
+
+    // ========================================
+    // Core Decoding API
+    // ========================================
+
+    /// @brief Decode WAV data from a streaming input
+    ///
+    /// Handles both header parsing and audio decoding in a single streaming API.
+    /// The output buffer is ignored during header parsing, so it is safe to pass
+    /// the same buffer throughout.
+    ///
+    /// @param input Pointer to input data buffer
+    /// @param input_len Number of bytes available in input buffer
+    /// @param output Pointer to output buffer for decoded PCM samples
+    /// @param output_size_bytes Size of the output buffer in bytes
+    /// @param bytes_consumed [out] Number of input bytes consumed by this call
+    /// @param samples_decoded [out] Number of samples decoded (per channel)
+    /// @return WAV_DECODER_HEADER_READY when header is complete (accessors now valid)
+    ///         WAV_DECODER_SUCCESS when audio samples were decoded
+    ///         WAV_DECODER_NEED_MORE_DATA when more input is needed
+    ///         WAV_DECODER_END_OF_STREAM when all audio data is consumed
+    ///         Negative error code on failure
     WAVDecoderResult decode(const uint8_t* input, size_t input_len, uint8_t* output,
                             size_t output_size_bytes, size_t& bytes_consumed,
                             size_t& samples_decoded);
 
-    /// Reset the decoder to its initial state.
-    void reset();
+    // ========================================
+    // Stream Information
+    // ========================================
 
-    /// @name Accessors (valid after HEADER_READY)
-    /// @{
-
-    /// @brief Returns the audio format tag from the WAV header.
+    /// @brief Get the audio format tag from the WAV header
+    /// @return Audio format tag (WAV_FORMAT_UNKNOWN if unrecognized)
     WAVAudioFormat get_audio_format() const;
-    /// @brief Returns the output bit depth per sample.
+
+    /// @brief Get the output bit depth per sample
+    ///
     /// @note For A-law/mu-law sources this returns 16 (the decoded output width),
     ///   not the original 8-bit WAV header value. For IEEE float sources, the output
     ///   is 32-bit signed integer PCM, so this returns 32.
+    ///
+    /// @return Bits per output sample
     uint16_t get_bits_per_sample() const {
         return this->bits_per_sample_;
     }
-    /// @brief Returns the number of bytes per decoded output sample.
+
+    /// @brief Get the number of bytes per decoded output sample
+    /// @return Bytes per output sample
     uint8_t get_bytes_per_output_sample() const {
         return this->bytes_per_output_sample_;
     }
-    /// @brief Returns the number of audio data bytes remaining to be decoded.
+
+    /// @brief Get the number of audio data bytes remaining to be decoded
+    /// @return Remaining bytes in the data chunk
     uint32_t get_bytes_remaining() const {
         return this->data_bytes_remaining_;
     }
-    /// @brief Returns the number of audio channels.
+
+    /// @brief Get the number of audio channels
+    /// @return Number of channels
     uint16_t get_channels() const {
         return this->num_channels_;
     }
-    /// @brief Returns the size of the data chunk in bytes.
+
+    /// @brief Get the size of the data chunk in bytes
+    /// @return Data chunk size
     uint32_t get_data_chunk_size() const {
         return this->data_chunk_size_;
     }
-    /// @brief Returns the sample rate in Hz.
+
+    /// @brief Get the sample rate in Hz
+    /// @return Sample rate
     uint32_t get_sample_rate() const {
         return this->sample_rate_;
     }
 
-    /// @}
-
-    /// @brief Returns true if header parsing is complete and accessors are valid.
+    /// @brief Check if header parsing is complete and accessors are valid
+    /// @return true if header has been parsed
     bool is_header_ready() const {
         return this->bytes_per_output_sample_ > 0;
     }
 
 private:
+    // ========================================
+    // Private Types
+    // ========================================
+
+    /// @brief Header parsing state machine
     enum class State : uint8_t {
         RIFF_TAG,
         RIFF_SIZE,
@@ -136,17 +208,26 @@ private:
         ERROR,
     };
 
+    /// @brief Pending chunk type during header parsing
     enum class PendingChunk : uint8_t {
         FMT,
         DATA,
         UNKNOWN,
     };
 
-    /// Internal header parser. Feeds bytes through the state machine.
+    // ========================================
+    // Header Parsing
+    // ========================================
+
+    /// @brief Internal header parser; feeds bytes through the state machine
     WAVDecoderResult parse(const uint8_t* input, size_t input_len, size_t& bytes_consumed);
 
-    // Process the accumulated field buffer.
+    /// @brief Process the accumulated field buffer
     WAVDecoderResult process_field();
+
+    // ========================================
+    // Member Variables
+    // ========================================
 
     // 32-bit fields
     uint32_t current_chunk_size_{0};

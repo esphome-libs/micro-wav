@@ -19,6 +19,10 @@
 
 namespace micro_wav {
 
+// ============================================================================
+// Constants
+// ============================================================================
+
 static constexpr uint16_t WAVE_FORMAT_EXTENSIBLE = 0xFFFE;
 
 // Standard fmt fields (audioFormat through bitsPerSample) = 16 bytes.
@@ -29,6 +33,10 @@ static constexpr uint32_t FMT_EXTENSIBLE_MIN_SIZE = 40;
 // Bytes consumed before SubFormat GUID's remaining 14 bytes:
 // 16 (standard) + 8 (cbSize + validBits + channelMask) + 2 (subFormat tag) = 26
 static constexpr uint32_t FMT_EXT_CONSUMED_BEFORE_GUID_TAIL = 26;
+
+// ============================================================================
+// Static Utilities
+// ============================================================================
 
 static uint16_t read_u16(const uint8_t* buf) {
     return static_cast<uint16_t>(static_cast<unsigned>(buf[0]) |
@@ -51,6 +59,10 @@ static uint32_t pad_to_even(uint32_t size) {
     }
     return size + (size & 1);
 }
+
+// ============================================================================
+// Sample Conversion
+// ============================================================================
 
 // G.711 A-law constants
 static constexpr uint8_t ALAW_XOR_MASK = 0x55;
@@ -146,6 +158,10 @@ static void convert_sample(WAVAudioFormat fmt, uint8_t bytes_per_input, const ui
     }
 }
 
+// ============================================================================
+// Lifecycle
+// ============================================================================
+
 void WAVDecoder::reset() {
     this->current_chunk_size_ = 0;
     this->data_bytes_remaining_ = 0;
@@ -162,6 +178,10 @@ void WAVDecoder::reset() {
     this->bytes_per_input_sample_ = 0;
     this->bytes_per_output_sample_ = 0;
 }
+
+// ============================================================================
+// Core Decoding API
+// ============================================================================
 
 WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint8_t* output,
                                     size_t output_size_bytes, size_t& bytes_consumed,
@@ -325,6 +345,10 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
     return WAV_DECODER_NEED_MORE_DATA;
 }
 
+// ============================================================================
+// Stream Information
+// ============================================================================
+
 WAVAudioFormat WAVDecoder::get_audio_format() const {
     switch (this->audio_format_) {
         case WAV_FORMAT_PCM:
@@ -336,6 +360,10 @@ WAVAudioFormat WAVDecoder::get_audio_format() const {
             return WAV_FORMAT_UNKNOWN;
     }
 }
+
+// ============================================================================
+// Header Parsing
+// ============================================================================
 
 WAVDecoderResult WAVDecoder::parse(const uint8_t* input, size_t input_len, size_t& bytes_consumed) {
     bytes_consumed = 0;
