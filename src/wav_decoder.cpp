@@ -147,20 +147,20 @@ static void convert_sample(WAVAudioFormat fmt, uint8_t bytes_per_input, const ui
 }
 
 void WAVDecoder::reset() {
-    current_chunk_size_ = 0;
-    data_bytes_remaining_ = 0;
-    data_chunk_size_ = 0;
-    sample_rate_ = 0;
-    skip_bytes_ = 0;
-    audio_format_ = 0;
-    bits_per_sample_ = 0;
-    num_channels_ = 0;
-    pending_chunk_type_ = PendingChunk::UNKNOWN;
-    state_ = State::RIFF_TAG;
-    buf_len_ = 0;
-    buf_needed_ = 4;
-    bytes_per_input_sample_ = 0;
-    bytes_per_output_sample_ = 0;
+    this->current_chunk_size_ = 0;
+    this->data_bytes_remaining_ = 0;
+    this->data_chunk_size_ = 0;
+    this->sample_rate_ = 0;
+    this->skip_bytes_ = 0;
+    this->audio_format_ = 0;
+    this->bits_per_sample_ = 0;
+    this->num_channels_ = 0;
+    this->pending_chunk_type_ = PendingChunk::UNKNOWN;
+    this->state_ = State::RIFF_TAG;
+    this->buf_len_ = 0;
+    this->buf_needed_ = 4;
+    this->bytes_per_input_sample_ = 0;
+    this->bytes_per_output_sample_ = 0;
 }
 
 WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint8_t* output,
@@ -173,59 +173,60 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
     }
 
     // Header parsing phase
-    if (bytes_per_output_sample_ == 0) {
-        WAVDecoderResult result = parse(input, input_len, bytes_consumed);
+    if (this->bytes_per_output_sample_ == 0) {
+        WAVDecoderResult result = this->parse(input, input_len, bytes_consumed);
         if (result != WAV_DECODER_HEADER_READY) {
             return result;
         }
 
         // Reject invalid headers
-        if (num_channels_ == 0 || sample_rate_ == 0) {
-            state_ = State::ERROR;
+        if (this->num_channels_ == 0 || this->sample_rate_ == 0) {
+            this->state_ = State::ERROR;
             return WAV_DECODER_ERROR_FAILED;
         }
 
         // Set up decode state
-        data_bytes_remaining_ = data_chunk_size_;
+        this->data_bytes_remaining_ = this->data_chunk_size_;
 
-        switch (get_audio_format()) {
+        switch (this->get_audio_format()) {
             case WAV_FORMAT_PCM:
-                if (bits_per_sample_ == 0 || bits_per_sample_ % 8 != 0 || bits_per_sample_ > 32) {
-                    state_ = State::ERROR;
+                if (this->bits_per_sample_ == 0 || this->bits_per_sample_ % 8 != 0 ||
+                    this->bits_per_sample_ > 32) {
+                    this->state_ = State::ERROR;
                     return WAV_DECODER_ERROR_UNSUPPORTED;
                 }
-                bytes_per_input_sample_ = static_cast<uint8_t>(bits_per_sample_ / 8);
-                if (bits_per_sample_ == 8) {
-                    bytes_per_output_sample_ = 1;
+                this->bytes_per_input_sample_ = static_cast<uint8_t>(this->bits_per_sample_ / 8);
+                if (this->bits_per_sample_ == 8) {
+                    this->bytes_per_output_sample_ = 1;
                 } else {
-                    bytes_per_output_sample_ = bytes_per_input_sample_;
+                    this->bytes_per_output_sample_ = this->bytes_per_input_sample_;
                 }
                 break;
             case WAV_FORMAT_ALAW:
             case WAV_FORMAT_MULAW:
-                if (bits_per_sample_ != 8) {
-                    state_ = State::ERROR;
+                if (this->bits_per_sample_ != 8) {
+                    this->state_ = State::ERROR;
                     return WAV_DECODER_ERROR_UNSUPPORTED;
                 }
-                bytes_per_input_sample_ = 1;
-                bytes_per_output_sample_ = 2;
-                bits_per_sample_ = 16;
+                this->bytes_per_input_sample_ = 1;
+                this->bytes_per_output_sample_ = 2;
+                this->bits_per_sample_ = 16;
                 break;
             case WAV_FORMAT_IEEE_FLOAT:
-                if (bits_per_sample_ != 32) {
-                    state_ = State::ERROR;
+                if (this->bits_per_sample_ != 32) {
+                    this->state_ = State::ERROR;
                     return WAV_DECODER_ERROR_UNSUPPORTED;
                 }
-                bytes_per_input_sample_ = 4;
-                bytes_per_output_sample_ = 4;
+                this->bytes_per_input_sample_ = 4;
+                this->bytes_per_output_sample_ = 4;
                 break;
             default:
-                state_ = State::ERROR;
+                this->state_ = State::ERROR;
                 return WAV_DECODER_ERROR_UNSUPPORTED;
         }
 
         // Reset buf_ for audio sample accumulation
-        buf_len_ = 0;
+        this->buf_len_ = 0;
         return WAV_DECODER_HEADER_READY;
     }
 
@@ -233,82 +234,83 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
     bytes_consumed = 0;
 
     // End of stream: no data remaining (discard any partial sample in buf_)
-    if (data_bytes_remaining_ == 0 && buf_len_ == 0) {
+    if (this->data_bytes_remaining_ == 0 && this->buf_len_ == 0) {
         return WAV_DECODER_END_OF_STREAM;
     }
 
-    if (output == nullptr || output_size_bytes < bytes_per_output_sample_) {
+    if (output == nullptr || output_size_bytes < this->bytes_per_output_sample_) {
         return WAV_DECODER_WARNING_OUTPUT_TOO_SMALL;
     }
 
-    WAVAudioFormat fmt = get_audio_format();
+    WAVAudioFormat fmt = this->get_audio_format();
 
     // Step 1: Complete any partial sample buffered from a previous call
-    if (buf_len_ > 0) {
-        while (buf_len_ < bytes_per_input_sample_ && bytes_consumed < input_len &&
-               data_bytes_remaining_ > 0) {
-            buf_[buf_len_++] = input[bytes_consumed++];
-            --data_bytes_remaining_;
+    if (this->buf_len_ > 0) {
+        while (this->buf_len_ < this->bytes_per_input_sample_ && bytes_consumed < input_len &&
+               this->data_bytes_remaining_ > 0) {
+            this->buf_[this->buf_len_++] = input[bytes_consumed++];
+            --this->data_bytes_remaining_;
         }
-        if (buf_len_ < bytes_per_input_sample_) {
-            if (data_bytes_remaining_ == 0) {
-                buf_len_ = 0;
+        if (this->buf_len_ < this->bytes_per_input_sample_) {
+            if (this->data_bytes_remaining_ == 0) {
+                this->buf_len_ = 0;
                 return WAV_DECODER_END_OF_STREAM;
             }
             return WAV_DECODER_NEED_MORE_DATA;
         }
-        convert_sample(fmt, bytes_per_input_sample_, buf_, output);
-        buf_len_ = 0;
+        convert_sample(fmt, this->bytes_per_input_sample_, this->buf_, output);
+        this->buf_len_ = 0;
         ++samples_decoded;
     }
 
     // Step 2: Bulk-process complete samples directly from input
     {
         // Compute max samples we can process given input, output, and data constraints
-        size_t input_avail = (input_len - bytes_consumed) / bytes_per_input_sample_;
-        size_t output_avail = (output_size_bytes - samples_decoded * bytes_per_output_sample_) /
-                              bytes_per_output_sample_;
-        size_t data_avail = data_bytes_remaining_ / bytes_per_input_sample_;
+        size_t input_avail = (input_len - bytes_consumed) / this->bytes_per_input_sample_;
+        size_t output_avail =
+            (output_size_bytes - samples_decoded * this->bytes_per_output_sample_) /
+            this->bytes_per_output_sample_;
+        size_t data_avail = this->data_bytes_remaining_ / this->bytes_per_input_sample_;
         size_t count = std::min({input_avail, output_avail, data_avail});
 
-        if (count > 0 && fmt == WAV_FORMAT_PCM && bytes_per_input_sample_ > 1) {
+        if (count > 0 && fmt == WAV_FORMAT_PCM && this->bytes_per_input_sample_ > 1) {
             // PCM >= 16-bit: single memcpy for the entire run
-            size_t total_bytes = count * bytes_per_input_sample_;
-            memcpy(output + samples_decoded * bytes_per_output_sample_, input + bytes_consumed,
-                   total_bytes);
+            size_t total_bytes = count * this->bytes_per_input_sample_;
+            memcpy(output + samples_decoded * this->bytes_per_output_sample_,
+                   input + bytes_consumed, total_bytes);
             bytes_consumed += total_bytes;
-            data_bytes_remaining_ -= static_cast<uint32_t>(total_bytes);
+            this->data_bytes_remaining_ -= static_cast<uint32_t>(total_bytes);
             samples_decoded += count;
         } else if (count > 0 && fmt == WAV_FORMAT_PCM) {
             // PCM 8-bit unsigned->signed: batch XOR loop without per-sample function call
             const uint8_t* src = input + bytes_consumed;
-            uint8_t* dst = output + samples_decoded * bytes_per_output_sample_;
+            uint8_t* dst = output + samples_decoded * this->bytes_per_output_sample_;
             for (size_t i = 0; i < count; ++i) {
                 dst[i] = src[i] ^ G711_SIGN_BIT;
             }
             bytes_consumed += count;
-            data_bytes_remaining_ -= static_cast<uint32_t>(count);
+            this->data_bytes_remaining_ -= static_cast<uint32_t>(count);
             samples_decoded += count;
         } else {
             // A-law, mu-law, IEEE float: per-sample conversion
             for (size_t i = 0; i < count; ++i) {
-                convert_sample(fmt, bytes_per_input_sample_, input + bytes_consumed,
-                               output + samples_decoded * bytes_per_output_sample_);
-                bytes_consumed += bytes_per_input_sample_;
-                data_bytes_remaining_ -= bytes_per_input_sample_;
+                convert_sample(fmt, this->bytes_per_input_sample_, input + bytes_consumed,
+                               output + samples_decoded * this->bytes_per_output_sample_);
+                bytes_consumed += this->bytes_per_input_sample_;
+                this->data_bytes_remaining_ -= this->bytes_per_input_sample_;
                 ++samples_decoded;
             }
         }
     }
 
     // Step 3: Buffer any trailing partial sample for the next call
-    if (samples_decoded * bytes_per_output_sample_ + bytes_per_output_sample_ <=
+    if (samples_decoded * this->bytes_per_output_sample_ + this->bytes_per_output_sample_ <=
             output_size_bytes &&
-        data_bytes_remaining_ > 0 && bytes_consumed < input_len) {
-        while (bytes_consumed < input_len && buf_len_ < bytes_per_input_sample_ &&
-               data_bytes_remaining_ > 0) {
-            buf_[buf_len_++] = input[bytes_consumed++];
-            --data_bytes_remaining_;
+        this->data_bytes_remaining_ > 0 && bytes_consumed < input_len) {
+        while (bytes_consumed < input_len && this->buf_len_ < this->bytes_per_input_sample_ &&
+               this->data_bytes_remaining_ > 0) {
+            this->buf_[this->buf_len_++] = input[bytes_consumed++];
+            --this->data_bytes_remaining_;
         }
     }
 
@@ -316,7 +318,7 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
         return WAV_DECODER_SUCCESS;
     }
 
-    if (data_bytes_remaining_ == 0 && buf_len_ == 0) {
+    if (this->data_bytes_remaining_ == 0 && this->buf_len_ == 0) {
         return WAV_DECODER_END_OF_STREAM;
     }
 
@@ -324,12 +326,12 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
 }
 
 WAVAudioFormat WAVDecoder::get_audio_format() const {
-    switch (audio_format_) {
+    switch (this->audio_format_) {
         case WAV_FORMAT_PCM:
         case WAV_FORMAT_IEEE_FLOAT:
         case WAV_FORMAT_ALAW:
         case WAV_FORMAT_MULAW:
-            return static_cast<WAVAudioFormat>(audio_format_);
+            return static_cast<WAVAudioFormat>(this->audio_format_);
         default:
             return WAV_FORMAT_UNKNOWN;
     }
@@ -338,37 +340,37 @@ WAVAudioFormat WAVDecoder::get_audio_format() const {
 WAVDecoderResult WAVDecoder::parse(const uint8_t* input, size_t input_len, size_t& bytes_consumed) {
     bytes_consumed = 0;
 
-    if (state_ == State::IN_DATA) {
+    if (this->state_ == State::IN_DATA) {
         return WAV_DECODER_HEADER_READY;
     }
-    if (state_ == State::ERROR) {
+    if (this->state_ == State::ERROR) {
         return WAV_DECODER_ERROR_FAILED;
     }
 
     while (bytes_consumed < input_len) {
         // Skip phase
-        if (skip_bytes_ > 0) {
+        if (this->skip_bytes_ > 0) {
             size_t can_skip =
-                std::min(static_cast<size_t>(skip_bytes_), input_len - bytes_consumed);
-            skip_bytes_ -= static_cast<uint32_t>(can_skip);
+                std::min(static_cast<size_t>(this->skip_bytes_), input_len - bytes_consumed);
+            this->skip_bytes_ -= static_cast<uint32_t>(can_skip);
             bytes_consumed += can_skip;
-            if (skip_bytes_ > 0) {
+            if (this->skip_bytes_ > 0) {
                 return WAV_DECODER_NEED_MORE_DATA;
             }
             continue;
         }
 
         // Accumulate phase
-        while (buf_len_ < buf_needed_ && bytes_consumed < input_len) {
-            buf_[buf_len_++] = input[bytes_consumed++];
+        while (this->buf_len_ < this->buf_needed_ && bytes_consumed < input_len) {
+            this->buf_[this->buf_len_++] = input[bytes_consumed++];
         }
-        if (buf_len_ < buf_needed_) {
+        if (this->buf_len_ < this->buf_needed_) {
             return WAV_DECODER_NEED_MORE_DATA;
         }
 
         // Process phase
-        WAVDecoderResult result = process_field();
-        buf_len_ = 0;
+        WAVDecoderResult result = this->process_field();
+        this->buf_len_ = 0;
         if (result != WAV_DECODER_NEED_MORE_DATA) {
             return result;
         }
@@ -378,128 +380,129 @@ WAVDecoderResult WAVDecoder::parse(const uint8_t* input, size_t input_len, size_
 }
 
 WAVDecoderResult WAVDecoder::process_field() {
-    switch (state_) {
+    switch (this->state_) {
         case State::RIFF_TAG:
-            if (!tag_equals(buf_, "RIFF")) {
-                state_ = State::ERROR;
+            if (!tag_equals(this->buf_, "RIFF")) {
+                this->state_ = State::ERROR;
                 return WAV_DECODER_ERROR_NO_RIFF;
             }
-            state_ = State::RIFF_SIZE;
-            buf_needed_ = 4;
+            this->state_ = State::RIFF_SIZE;
+            this->buf_needed_ = 4;
             break;
 
         case State::RIFF_SIZE:
             // Read but don't need the RIFF chunk size
-            state_ = State::WAVE_TAG;
-            buf_needed_ = 4;
+            this->state_ = State::WAVE_TAG;
+            this->buf_needed_ = 4;
             break;
 
         case State::WAVE_TAG:
-            if (!tag_equals(buf_, "WAVE")) {
-                state_ = State::ERROR;
+            if (!tag_equals(this->buf_, "WAVE")) {
+                this->state_ = State::ERROR;
                 return WAV_DECODER_ERROR_NO_WAVE;
             }
-            state_ = State::CHUNK_TAG;
-            buf_needed_ = 4;
+            this->state_ = State::CHUNK_TAG;
+            this->buf_needed_ = 4;
             break;
 
         case State::CHUNK_TAG:
-            if (tag_equals(buf_, "fmt ")) {
-                pending_chunk_type_ = PendingChunk::FMT;
-            } else if (tag_equals(buf_, "data")) {
-                pending_chunk_type_ = PendingChunk::DATA;
+            if (tag_equals(this->buf_, "fmt ")) {
+                this->pending_chunk_type_ = PendingChunk::FMT;
+            } else if (tag_equals(this->buf_, "data")) {
+                this->pending_chunk_type_ = PendingChunk::DATA;
             } else {
-                pending_chunk_type_ = PendingChunk::UNKNOWN;
+                this->pending_chunk_type_ = PendingChunk::UNKNOWN;
             }
-            state_ = State::CHUNK_SIZE;
-            buf_needed_ = 4;
+            this->state_ = State::CHUNK_SIZE;
+            this->buf_needed_ = 4;
             break;
 
         case State::CHUNK_SIZE:
-            current_chunk_size_ = read_u32(buf_);
-            switch (pending_chunk_type_) {
+            this->current_chunk_size_ = read_u32(this->buf_);
+            switch (this->pending_chunk_type_) {
                 case PendingChunk::FMT:
-                    if (current_chunk_size_ < FMT_STANDARD_SIZE) {
-                        state_ = State::ERROR;
+                    if (this->current_chunk_size_ < FMT_STANDARD_SIZE) {
+                        this->state_ = State::ERROR;
                         return WAV_DECODER_ERROR_FAILED;
                     }
-                    state_ = State::FMT_AUDIO_FORMAT;
-                    buf_needed_ = 2;
+                    this->state_ = State::FMT_AUDIO_FORMAT;
+                    this->buf_needed_ = 2;
                     break;
                 case PendingChunk::DATA:
-                    data_chunk_size_ = current_chunk_size_;
-                    state_ = State::IN_DATA;
+                    this->data_chunk_size_ = this->current_chunk_size_;
+                    this->state_ = State::IN_DATA;
                     return WAV_DECODER_HEADER_READY;
                 case PendingChunk::UNKNOWN:
-                    skip_bytes_ = pad_to_even(current_chunk_size_);
-                    state_ = State::CHUNK_TAG;
-                    buf_needed_ = 4;
+                    this->skip_bytes_ = pad_to_even(this->current_chunk_size_);
+                    this->state_ = State::CHUNK_TAG;
+                    this->buf_needed_ = 4;
                     break;
             }
             break;
 
         case State::FMT_AUDIO_FORMAT:
-            audio_format_ = read_u16(buf_);
-            state_ = State::FMT_NUM_CHANNELS;
-            buf_needed_ = 2;
+            this->audio_format_ = read_u16(this->buf_);
+            this->state_ = State::FMT_NUM_CHANNELS;
+            this->buf_needed_ = 2;
             break;
 
         case State::FMT_NUM_CHANNELS:
-            num_channels_ = read_u16(buf_);
-            state_ = State::FMT_SAMPLE_RATE;
-            buf_needed_ = 4;
+            this->num_channels_ = read_u16(this->buf_);
+            this->state_ = State::FMT_SAMPLE_RATE;
+            this->buf_needed_ = 4;
             break;
 
         case State::FMT_SAMPLE_RATE:
-            sample_rate_ = read_u32(buf_);
-            state_ = State::FMT_BYTE_RATE;
-            buf_needed_ = 4;
+            this->sample_rate_ = read_u32(this->buf_);
+            this->state_ = State::FMT_BYTE_RATE;
+            this->buf_needed_ = 4;
             break;
 
         case State::FMT_BYTE_RATE:
             // Skip byte rate
-            state_ = State::FMT_BLOCK_ALIGN;
-            buf_needed_ = 2;
+            this->state_ = State::FMT_BLOCK_ALIGN;
+            this->buf_needed_ = 2;
             break;
 
         case State::FMT_BLOCK_ALIGN:
             // Skip block align
-            state_ = State::FMT_BITS_PER_SAMPLE;
-            buf_needed_ = 2;
+            this->state_ = State::FMT_BITS_PER_SAMPLE;
+            this->buf_needed_ = 2;
             break;
 
         case State::FMT_BITS_PER_SAMPLE:
-            bits_per_sample_ = read_u16(buf_);
-            if (audio_format_ == WAVE_FORMAT_EXTENSIBLE &&
-                current_chunk_size_ >= FMT_EXTENSIBLE_MIN_SIZE) {
+            this->bits_per_sample_ = read_u16(this->buf_);
+            if (this->audio_format_ == WAVE_FORMAT_EXTENSIBLE &&
+                this->current_chunk_size_ >= FMT_EXTENSIBLE_MIN_SIZE) {
                 // WAVE_FORMAT_EXTENSIBLE: skip cbSize(2) + validBitsPerSample(2) +
                 // channelMask(4) = 8 bytes, then read the SubFormat GUID's first
                 // two bytes to get the actual audio format.
-                skip_bytes_ = 8;
-                state_ = State::FMT_EXT_SUB_FORMAT;
-                buf_needed_ = 2;
-            } else if (audio_format_ == WAVE_FORMAT_EXTENSIBLE) {
+                this->skip_bytes_ = 8;
+                this->state_ = State::FMT_EXT_SUB_FORMAT;
+                this->buf_needed_ = 2;
+            } else if (this->audio_format_ == WAVE_FORMAT_EXTENSIBLE) {
                 // Extensible format but chunk too small for the required fields
-                state_ = State::ERROR;
+                this->state_ = State::ERROR;
                 return WAV_DECODER_ERROR_FAILED;
-            } else if (current_chunk_size_ > FMT_STANDARD_SIZE) {
-                skip_bytes_ = pad_to_even(current_chunk_size_) - FMT_STANDARD_SIZE;
-                state_ = State::CHUNK_TAG;
-                buf_needed_ = 4;
+            } else if (this->current_chunk_size_ > FMT_STANDARD_SIZE) {
+                this->skip_bytes_ = pad_to_even(this->current_chunk_size_) - FMT_STANDARD_SIZE;
+                this->state_ = State::CHUNK_TAG;
+                this->buf_needed_ = 4;
             } else {
-                state_ = State::CHUNK_TAG;
-                buf_needed_ = 4;
+                this->state_ = State::CHUNK_TAG;
+                this->buf_needed_ = 4;
             }
             break;
 
         case State::FMT_EXT_SUB_FORMAT:
-            audio_format_ = read_u16(buf_);
+            this->audio_format_ = read_u16(this->buf_);
             // Skip remaining 14 bytes of SubFormat GUID + any extra chunk data
-            if (current_chunk_size_ > FMT_EXT_CONSUMED_BEFORE_GUID_TAIL) {
-                skip_bytes_ = pad_to_even(current_chunk_size_) - FMT_EXT_CONSUMED_BEFORE_GUID_TAIL;
+            if (this->current_chunk_size_ > FMT_EXT_CONSUMED_BEFORE_GUID_TAIL) {
+                this->skip_bytes_ =
+                    pad_to_even(this->current_chunk_size_) - FMT_EXT_CONSUMED_BEFORE_GUID_TAIL;
             }
-            state_ = State::CHUNK_TAG;
-            buf_needed_ = 4;
+            this->state_ = State::CHUNK_TAG;
+            this->buf_needed_ = 4;
             break;
 
         case State::IN_DATA:

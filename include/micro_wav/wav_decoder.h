@@ -88,34 +88,34 @@ public:
     ///   not the original 8-bit WAV header value. For IEEE float sources, the output
     ///   is 32-bit signed integer PCM, so this returns 32.
     uint16_t get_bits_per_sample() const {
-        return bits_per_sample_;
+        return this->bits_per_sample_;
     }
     /// @brief Returns the number of bytes per decoded output sample.
     uint8_t get_bytes_per_output_sample() const {
-        return bytes_per_output_sample_;
+        return this->bytes_per_output_sample_;
     }
     /// @brief Returns the number of audio data bytes remaining to be decoded.
     uint32_t get_bytes_remaining() const {
-        return data_bytes_remaining_;
+        return this->data_bytes_remaining_;
     }
     /// @brief Returns the number of audio channels.
     uint16_t get_channels() const {
-        return num_channels_;
+        return this->num_channels_;
     }
     /// @brief Returns the size of the data chunk in bytes.
     uint32_t get_data_chunk_size() const {
-        return data_chunk_size_;
+        return this->data_chunk_size_;
     }
     /// @brief Returns the sample rate in Hz.
     uint32_t get_sample_rate() const {
-        return sample_rate_;
+        return this->sample_rate_;
     }
 
     /// @}
 
     /// @brief Returns true if header parsing is complete and accessors are valid.
     bool is_header_ready() const {
-        return bytes_per_output_sample_ > 0;
+        return this->bytes_per_output_sample_ > 0;
     }
 
 private:
