@@ -45,7 +45,10 @@ static bool tag_equals(const uint8_t* buf, const char* tag) {
 
 // Round up to even for RIFF chunk padding
 static uint32_t pad_to_even(uint32_t size) {
-    return (size + 1) & ~static_cast<uint32_t>(1);
+    if (size == UINT32_MAX) {
+        return size;
+    }
+    return size + (size & 1);
 }
 
 // G.711 A-law constants
@@ -350,6 +353,10 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
                                     size_t& samples_decoded) {
     samples_decoded = 0;
 
+    if (input == nullptr && input_len > 0) {
+        return WAV_DECODER_WARNING_INVALID_INPUT;
+    }
+
     // Header parsing phase
     if (bytes_per_output_sample_ == 0) {
         WAVDecoderResult result = parse(input, input_len, bytes_consumed);
@@ -362,7 +369,8 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
 
         switch (get_audio_format()) {
             case WAV_FORMAT_PCM:
-                if (bits_per_sample_ == 0 || bits_per_sample_ % 8 != 0) {
+                if (bits_per_sample_ == 0 || bits_per_sample_ % 8 != 0 || bits_per_sample_ > 32) {
+                    state_ = State::ERROR;
                     return WAV_DECODER_ERROR_UNSUPPORTED;
                 }
                 bytes_per_input_sample_ = static_cast<uint8_t>(bits_per_sample_ / 8);
@@ -380,12 +388,14 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
                 break;
             case WAV_FORMAT_IEEE_FLOAT:
                 if (bits_per_sample_ != 32) {
+                    state_ = State::ERROR;
                     return WAV_DECODER_ERROR_UNSUPPORTED;
                 }
                 bytes_per_input_sample_ = 4;
                 bytes_per_output_sample_ = 4;
                 break;
             default:
+                state_ = State::ERROR;
                 return WAV_DECODER_ERROR_UNSUPPORTED;
         }
 

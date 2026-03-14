@@ -22,24 +22,46 @@
 
 namespace micro_wav {
 
+/// Result codes returned by WAVDecoder::decode().
+/// Negative values indicate errors or warnings; non-negative values indicate progress.
 enum WAVDecoderResult : int8_t {
-    WAV_DECODER_ERROR_NO_RIFF = -5,
-    WAV_DECODER_ERROR_NO_WAVE = -4,
-    WAV_DECODER_ERROR_FAILED = -3,
-    WAV_DECODER_ERROR_UNSUPPORTED = -2,
+    /// Input does not start with a valid RIFF tag.
+    WAV_DECODER_ERROR_NO_RIFF = -6,
+    /// RIFF container does not contain a WAVE form type.
+    WAV_DECODER_ERROR_NO_WAVE = -5,
+    /// Structural error in the WAV file (e.g., fmt chunk too small).
+    WAV_DECODER_ERROR_FAILED = -4,
+    /// Audio format or bit depth is not supported by this decoder.
+    WAV_DECODER_ERROR_UNSUPPORTED = -3,
+    /// Input pointer is null while input length is non-zero.
+    WAV_DECODER_WARNING_INVALID_INPUT = -2,
+    /// Output buffer is null or too small to hold one sample.
     WAV_DECODER_WARNING_OUTPUT_TOO_SMALL = -1,
+    /// One or more audio samples were decoded into the output buffer.
     WAV_DECODER_SUCCESS = 0,
+    /// Header parsing is complete; accessors are now valid and the decoder is ready for audio data.
     WAV_DECODER_HEADER_READY = 1,
+    /// All audio data in the data chunk has been consumed.
     WAV_DECODER_END_OF_STREAM = 2,
+    /// Not enough input bytes to make progress; supply more data.
     WAV_DECODER_NEED_MORE_DATA = 3,
 };
 
+/// Audio format tags recognized by the decoder.
+/// Values match the WAV spec's 16-bit wFormatTag field. WAVE_FORMAT_EXTENSIBLE (0xFFFE) is
+/// resolved to the underlying format via the SubFormat GUID; unrecognized tags map to
+/// WAV_FORMAT_UNKNOWN.
 enum WAVAudioFormat : uint16_t {  // NOLINT(performance-enum-size): matches WAV spec's 16-bit
                                   // wFormatTag
+    /// Unrecognized or unsupported format tag.
     WAV_FORMAT_UNKNOWN = 0x0000,
+    /// Linear pulse-code modulation (8/16/24/32-bit).
     WAV_FORMAT_PCM = 0x0001,
+    /// IEEE 754 floating-point (32-bit).
     WAV_FORMAT_IEEE_FLOAT = 0x0003,
+    /// ITU-T G.711 A-law (8-bit input, decoded to 16-bit PCM).
     WAV_FORMAT_ALAW = 0x0006,
+    /// ITU-T G.711 mu-law (8-bit input, decoded to 16-bit PCM).
     WAV_FORMAT_MULAW = 0x0007,
 };
 
@@ -67,8 +89,8 @@ public:
         return num_channels_;
     }
     /// @brief Returns the output bit depth per sample.
-    /// @note For A-law/mu-law sources this is 16 (decoded from 8-bit), not the
-    ///   original WAV header value.
+    /// @note For A-law/mu-law sources this returns 16 (the decoded output width),
+    ///   not the original 8-bit WAV header value.
     uint16_t get_bits_per_sample() const {
         return bits_per_sample_;
     }
