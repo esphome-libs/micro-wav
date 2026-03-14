@@ -87,3 +87,4 @@ Apache 2.0
 ## Links
 
 - [Wave File Specifications](https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html) — McGill University WAV format reference
+- [wav-decoder](https://github.com/synesthesiam/wav-decoder) — WAV decoder by Mike Hansen
