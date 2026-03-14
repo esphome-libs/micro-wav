@@ -373,13 +373,13 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
                 break;
             case WAV_FORMAT_IEEE_FLOAT:
                 if (bits_per_sample_ != 32) {
-                    return WAV_DECODER_ERROR_FAILED;
+                    return WAV_DECODER_ERROR_UNSUPPORTED;
                 }
                 bytes_per_input_sample_ = 4;
                 bytes_per_output_sample_ = 4;
                 break;
             default:
-                return WAV_DECODER_ERROR_FAILED;
+                return WAV_DECODER_ERROR_UNSUPPORTED;
         }
 
         // Reset buf_ for audio sample accumulation
