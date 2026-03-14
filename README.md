@@ -71,3 +71,7 @@ target_link_libraries(your_target PRIVATE micro_wav)
 ## License
 
 Apache 2.0
+
+## Links
+
+- [Wave File Specifications](https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html) — McGill University WAV format reference
