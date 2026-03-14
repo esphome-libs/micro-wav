@@ -147,18 +147,18 @@ static void convert_sample(WAVAudioFormat fmt, uint8_t bytes_per_input, const ui
 }
 
 void WAVDecoder::reset() {
+    current_chunk_size_ = 0;
+    data_bytes_remaining_ = 0;
+    data_chunk_size_ = 0;
+    sample_rate_ = 0;
+    skip_bytes_ = 0;
+    audio_format_ = 0;
+    bits_per_sample_ = 0;
+    num_channels_ = 0;
+    pending_chunk_type_ = PendingChunk::UNKNOWN;
+    state_ = State::RIFF_TAG;
     buf_len_ = 0;
     buf_needed_ = 4;
-    skip_bytes_ = 0;
-    state_ = State::RIFF_TAG;
-    pending_chunk_type_ = PendingChunk::UNKNOWN;
-    current_chunk_size_ = 0;
-    sample_rate_ = 0;
-    num_channels_ = 0;
-    bits_per_sample_ = 0;
-    audio_format_ = 0;
-    data_chunk_size_ = 0;
-    data_bytes_remaining_ = 0;
     bytes_per_input_sample_ = 0;
     bytes_per_output_sample_ = 0;
 }

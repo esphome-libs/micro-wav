@@ -81,26 +81,14 @@ public:
     /// @name Accessors (valid after HEADER_READY)
     /// @{
 
-    /// @brief Returns the sample rate in Hz.
-    uint32_t get_sample_rate() const {
-        return sample_rate_;
-    }
-    /// @brief Returns the number of audio channels.
-    uint16_t get_channels() const {
-        return num_channels_;
-    }
+    /// @brief Returns the audio format tag from the WAV header.
+    WAVAudioFormat get_audio_format() const;
     /// @brief Returns the output bit depth per sample.
     /// @note For A-law/mu-law sources this returns 16 (the decoded output width),
     ///   not the original 8-bit WAV header value. For IEEE float sources, the output
     ///   is 32-bit signed integer PCM, so this returns 32.
     uint16_t get_bits_per_sample() const {
         return bits_per_sample_;
-    }
-    /// @brief Returns the audio format tag from the WAV header.
-    WAVAudioFormat get_audio_format() const;
-    /// @brief Returns the size of the data chunk in bytes.
-    uint32_t get_data_chunk_size() const {
-        return data_chunk_size_;
     }
     /// @brief Returns the number of bytes per decoded output sample.
     uint8_t get_bytes_per_output_sample() const {
@@ -109,6 +97,18 @@ public:
     /// @brief Returns the number of audio data bytes remaining to be decoded.
     uint32_t get_bytes_remaining() const {
         return data_bytes_remaining_;
+    }
+    /// @brief Returns the number of audio channels.
+    uint16_t get_channels() const {
+        return num_channels_;
+    }
+    /// @brief Returns the size of the data chunk in bytes.
+    uint32_t get_data_chunk_size() const {
+        return data_chunk_size_;
+    }
+    /// @brief Returns the sample rate in Hz.
+    uint32_t get_sample_rate() const {
+        return sample_rate_;
     }
 
     /// @}
@@ -148,26 +148,24 @@ private:
     // Process the accumulated field buffer.
     WAVDecoderResult process_field();
 
-    // Accumulator
+    // 32-bit fields
+    uint32_t current_chunk_size_{0};
+    uint32_t data_bytes_remaining_{0};
+    uint32_t data_chunk_size_{0};
+    uint32_t sample_rate_{0};
+    uint32_t skip_bytes_{0};
+
+    // 16-bit fields
+    uint16_t audio_format_{0};
+    uint16_t bits_per_sample_{0};
+    uint16_t num_channels_{0};
+
+    // 8-bit fields
+    PendingChunk pending_chunk_type_{PendingChunk::UNKNOWN};
+    State state_{State::RIFF_TAG};
     uint8_t buf_[4]{};
     uint8_t buf_len_{0};
     uint8_t buf_needed_{4};
-    uint32_t skip_bytes_{0};
-
-    // State machine
-    State state_{State::RIFF_TAG};
-    PendingChunk pending_chunk_type_{PendingChunk::UNKNOWN};
-    uint32_t current_chunk_size_{0};
-
-    // Parsed fields
-    uint32_t sample_rate_{0};
-    uint16_t num_channels_{0};
-    uint16_t bits_per_sample_{0};
-    uint16_t audio_format_{0};
-    uint32_t data_chunk_size_{0};
-
-    // Decode state
-    uint32_t data_bytes_remaining_{0};
     uint8_t bytes_per_input_sample_{0};
     uint8_t bytes_per_output_sample_{0};
 };
