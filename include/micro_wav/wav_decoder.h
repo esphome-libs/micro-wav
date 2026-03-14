@@ -49,7 +49,7 @@ enum WAVDecoderResult : int8_t {
 /// @brief Audio format tags recognized by the decoder
 /// Values match the WAV spec's 16-bit wFormatTag field. WAVE_FORMAT_EXTENSIBLE (0xFFFE) is
 /// resolved to the underlying format via the SubFormat GUID; unrecognized tags map to
-/// WAV_FORMAT_UNKNOWN.
+/// WAV_FORMAT_UNKNOWN
 enum WAVAudioFormat : uint16_t {     // NOLINT(performance-enum-size): matches WAV spec's 16-bit
                                      // wFormatTag
     WAV_FORMAT_UNKNOWN = 0x0000,     // Unrecognized or unsupported format tag
@@ -173,16 +173,16 @@ public:
         return this->data_chunk_size_;
     }
 
-    /// @brief Get the sample rate in Hz
-    /// @return Sample rate
-    uint32_t get_sample_rate() const {
-        return this->sample_rate_;
-    }
-
     /// @brief Check if header parsing is complete and accessors are valid
     /// @return true if header has been parsed
     bool is_header_ready() const {
         return this->bytes_per_output_sample_ > 0;
+    }
+
+    /// @brief Get the sample rate in Hz
+    /// @return Sample rate
+    uint32_t get_sample_rate() const {
+        return this->sample_rate_;
     }
 
 private:
@@ -242,13 +242,13 @@ private:
     uint16_t num_channels_{0};
 
     // 8-bit fields
-    PendingChunk pending_chunk_type_{PendingChunk::UNKNOWN};
-    State state_{State::RIFF_TAG};
     uint8_t buf_[4]{};
     uint8_t buf_len_{0};
     uint8_t buf_needed_{4};
     uint8_t bytes_per_input_sample_{0};
     uint8_t bytes_per_output_sample_{0};
+    PendingChunk pending_chunk_type_{PendingChunk::UNKNOWN};
+    State state_{State::RIFF_TAG};
 };
 
 }  // namespace micro_wav
