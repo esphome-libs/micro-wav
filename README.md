@@ -18,9 +18,7 @@ Streaming WAV decoder for embedded devices. Decodes WAV audio to PCM byte-by-byt
 
 ## Usage Example
 
-### Integration
-
-#### ESP-IDF Component Manager
+### ESP-IDF Component Manager
 
 ```yaml
 dependencies:
@@ -28,13 +26,13 @@ dependencies:
     git: https://github.com/esphome-libs/micro-wav.git
 ```
 
-#### PlatformIO
+### PlatformIO
 
 ```ini
 lib_deps = https://github.com/esphome-libs/micro-wav.git
 ```
 
-#### CMake Subdirectory
+### CMake Subdirectory
 
 ```cmake
 add_subdirectory(micro-wav)
@@ -86,7 +84,7 @@ while (size_t len = read_chunk(data, sizeof(data))) {
 ### Methods
 
 | Method | Description |
-|---|---|
+| --- | --- |
 | `decode(input, input_len, output, output_size, bytes_consumed, samples_decoded)` | Feed input bytes; parses header or decodes audio samples |
 | `reset()` | Reset decoder to initial state for a new stream |
 | `get_sample_rate()` | Sample rate in Hz |
@@ -103,7 +101,7 @@ while (size_t len = read_chunk(data, sizeof(data))) {
 `decode()` returns `WAVDecoderResult`: non-negative values indicate success/informational states, negative values indicate errors or warnings.
 
 | Value | Description |
-|---|---|
+| --- | --- |
 | `WAV_DECODER_SUCCESS` | Samples decoded (check `samples_decoded`) |
 | `WAV_DECODER_HEADER_READY` | Header fully parsed; stream info available |
 | `WAV_DECODER_END_OF_STREAM` | All data chunk bytes consumed |
@@ -119,7 +117,7 @@ while (size_t len = read_chunk(data, sizeof(data))) {
 `get_audio_format()` returns `WAVAudioFormat` after the header is parsed. Unrecognized tags return `WAV_FORMAT_UNKNOWN`.
 
 | Value | Description |
-|---|---|
+| --- | --- |
 | `WAV_FORMAT_PCM` | Uncompressed integer PCM |
 | `WAV_FORMAT_IEEE_FLOAT` | IEEE 754 floating-point |
 | `WAV_FORMAT_ALAW` | A-law companded |
