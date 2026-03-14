@@ -105,6 +105,10 @@ add_subdirectory(micro-wav)
 target_link_libraries(your_target PRIVATE micro_wav)
 ```
 
+## Limitations
+
+- IEEE float decoding assumes the host platform uses little-endian IEEE 754 floats. This is true for all common targets (ESP32, x86, ARM Cortex) but will produce incorrect results on big-endian platforms.
+
 ## License
 
 Apache 2.0
