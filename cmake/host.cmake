@@ -6,6 +6,8 @@ if(__wav_host_defined)
 endif()
 set(__wav_host_defined TRUE)
 
+message(STATUS "microWAV: Building for host platform")
+
 function(wav_configure_host TARGET SOURCE_DIR)
     target_include_directories(${TARGET} PUBLIC
         ${SOURCE_DIR}/include
@@ -28,8 +30,12 @@ function(wav_configure_host TARGET SOURCE_DIR)
         $<$<BOOL:${ENABLE_WERROR}>:-Werror>
     )
 
-    # C++ standard
-    target_compile_features(${TARGET} PUBLIC cxx_std_11)
+    # C++ standard: PUBLIC for libraries (propagates to consumers), PRIVATE for executables
+    get_target_property(_target_type ${TARGET} TYPE)
+    if(_target_type STREQUAL "EXECUTABLE")
+        target_compile_features(${TARGET} PRIVATE cxx_std_11)
+    else()
+        target_compile_features(${TARGET} PUBLIC cxx_std_11)
+    endif()
 
-    message(STATUS "microWAV: Building for host platform")
 endfunction()

@@ -2,7 +2,7 @@
 name: "micro-wav"
 dependencies:
   idf: ">=4.4"
-description: "Streaming WAV header parser optimized for embedded devices"
+description: "Streaming WAV decoder optimized for embedded devices"
 license: "Apache-2.0"
 maintainers:
   - Kevin Ahrendt <kevin.ahrendt@openhomefoundation.org>
@@ -18,3 +18,5 @@ files:
     - ".markdownlint.yaml"
     - ".pre-commit-config.yaml"
     - "CLAUDE.md"
+    - "tests/**"
+    - "script/**"

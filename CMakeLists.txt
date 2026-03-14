@@ -58,6 +58,11 @@ if(ESP_IDF_BUILD)
 else()
     project(micro_wav VERSION 1.0.0 LANGUAGES CXX)
 
+    # Host build options
+    option(ENABLE_WERROR "Treat warnings as errors" OFF)
+    option(ENABLE_TESTS "Build tests" OFF)
+    option(BUILD_TEST_WAV_WRITER "Build WAV file writer for sox validation" OFF)
+
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/host.cmake)
 
     # Get sources
@@ -65,11 +70,6 @@ else()
 
     # Create the library
     add_library(micro_wav STATIC ${WAV_SOURCES})
-
-    # Host build options
-    option(ENABLE_WERROR "Treat warnings as errors" OFF)
-    option(ENABLE_TESTS "Build tests" OFF)
-    option(BUILD_TEST_WAV_WRITER "Build WAV file writer for sox validation" OFF)
 
     # Apply host configuration
     wav_configure_host(micro_wav ${CMAKE_CURRENT_SOURCE_DIR})

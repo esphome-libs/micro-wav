@@ -90,7 +90,8 @@ public:
     }
     /// @brief Returns the output bit depth per sample.
     /// @note For A-law/mu-law sources this returns 16 (the decoded output width),
-    ///   not the original 8-bit WAV header value.
+    ///   not the original 8-bit WAV header value. For IEEE float sources, the output
+    ///   is 32-bit signed integer PCM, so this returns 32.
     uint16_t get_bits_per_sample() const {
         return bits_per_sample_;
     }
@@ -100,8 +101,21 @@ public:
     uint32_t get_data_chunk_size() const {
         return data_chunk_size_;
     }
+    /// @brief Returns the number of bytes per decoded output sample.
+    uint8_t get_bytes_per_output_sample() const {
+        return bytes_per_output_sample_;
+    }
+    /// @brief Returns the number of audio data bytes remaining to be decoded.
+    uint32_t get_bytes_remaining() const {
+        return data_bytes_remaining_;
+    }
 
     /// @}
+
+    /// @brief Returns true if header parsing is complete and accessors are valid.
+    bool is_header_ready() const {
+        return bytes_per_output_sample_ > 0;
+    }
 
 private:
     enum class State : uint8_t {

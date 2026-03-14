@@ -33,14 +33,14 @@ if [ -z "$CLANG_TIDY" ]; then
     exit 1
 fi
 
-# Ensure compile_commands.json exists
+# Ensure compile_commands.json exists (with tests enabled so test sources are included)
 if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     echo "Generating compile_commands.json..."
-    cmake -B "$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "$ROOT_DIR"
+    cmake -B "$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_TESTS=ON -DBUILD_TEST_WAV_WRITER=ON "$ROOT_DIR"
 fi
 
 # Find all source files, excluding build/ directories
-SOURCES=$(find "$ROOT_DIR/src" \
+SOURCES=$(find "$ROOT_DIR/src" "$ROOT_DIR/tests" \
     -path '*/build' -prune -o \
     \( -name '*.cpp' -o -name '*.c' \) -print 2>/dev/null || true)
 

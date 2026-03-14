@@ -31,7 +31,8 @@ static constexpr uint32_t FMT_EXTENSIBLE_MIN_SIZE = 40;
 static constexpr uint32_t FMT_EXT_CONSUMED_BEFORE_GUID_TAIL = 26;
 
 static uint16_t read_u16(const uint8_t* buf) {
-    return static_cast<uint16_t>(buf[0] | (buf[1] << 8));
+    return static_cast<uint16_t>(static_cast<unsigned>(buf[0]) |
+                                 (static_cast<unsigned>(buf[1]) << 8));
 }
 
 static uint32_t read_u32(const uint8_t* buf) {
@@ -88,6 +89,9 @@ static int16_t decode_mulaw_sample(uint8_t mu_val) {
     return (mu_val & G711_SIGN_BIT) ? result : static_cast<int16_t>(-result);
 }
 
+// NOTE: Assumes the host platform uses little-endian IEEE 754 floats.
+// This is true for all supported targets (ESP32, x86, ARM Cortex) but will
+// produce incorrect results on big-endian platforms.
 static int32_t decode_float_to_int32(const uint8_t* bytes) {
     float f = 0.0F;
     memcpy(&f, bytes, sizeof(f));
@@ -364,6 +368,12 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
             return result;
         }
 
+        // Reject invalid headers
+        if (num_channels_ == 0 || sample_rate_ == 0) {
+            state_ = State::ERROR;
+            return WAV_DECODER_ERROR_FAILED;
+        }
+
         // Set up decode state
         data_bytes_remaining_ = data_chunk_size_;
 
@@ -382,6 +392,10 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
                 break;
             case WAV_FORMAT_ALAW:
             case WAV_FORMAT_MULAW:
+                if (bits_per_sample_ != 8) {
+                    state_ = State::ERROR;
+                    return WAV_DECODER_ERROR_UNSUPPORTED;
+                }
                 bytes_per_input_sample_ = 1;
                 bytes_per_output_sample_ = 2;
                 bits_per_sample_ = 16;
