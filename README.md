@@ -7,7 +7,7 @@ Streaming WAV decoder for embedded devices. Decodes WAV audio byte-by-byte with 
 ## Features
 
 - Byte-by-byte streaming: feed data in any chunk size
-- Unified `decode()` API for header parsing and audio decoding
+- Single `decode()` call for both header parsing and audio decoding
 - Decodes PCM (8/16/24/32-bit), G.711 A-law/mu-law, and IEEE float 32-bit
 - Automatically skips unknown chunks (LIST, INFO, etc.)
 - Handles standard and extended fmt chunks (WAVE_FORMAT_EXTENSIBLE)
@@ -36,7 +36,7 @@ while (size_t len = read_chunk(data, sizeof(data))) {
         len -= bytes_consumed;
 
         if (result == micro_wav::WAV_DECODER_HEADER_READY) {
-            // Header parsed — stream info is now available
+            // Header parsed, stream info now available
             uint32_t rate = decoder.get_sample_rate();
             uint16_t channels = decoder.get_channels();
             uint16_t bps = decoder.get_bits_per_sample();
@@ -111,5 +111,5 @@ Apache 2.0
 
 ## Links
 
-- [Wave File Specifications](https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html) — McGill University WAV format reference
-- [wav-decoder](https://github.com/synesthesiam/wav-decoder) — WAV decoder by Mike Hansen
+- [Wave File Specifications](https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html) - McGill University WAV format reference
+- [wav-decoder](https://github.com/synesthesiam/wav-decoder) - WAV decoder by Mike Hansen

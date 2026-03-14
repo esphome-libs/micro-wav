@@ -67,7 +67,7 @@ enum WAVAudioFormat : uint16_t {  // NOLINT(performance-enum-size): matches WAV 
 
 class WAVDecoder {
 public:
-    /// Unified decode: parses header then decodes audio samples.
+    /// Decodes WAV data: parses header fields, then decodes audio samples.
     /// The output buffer is ignored during header parsing, so it is safe to pass the same
     /// buffer throughout. Returns SUCCESS when samples are decoded, END_OF_STREAM when all
     /// data is consumed.
