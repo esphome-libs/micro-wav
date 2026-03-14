@@ -367,4 +367,143 @@ static const uint8_t error_extensible_too_small[] = {
 };
 static const size_t error_extensible_too_small_len = sizeof(error_extensible_too_small);
 
+// ============================================================================
+// Decode test data: headers with appended audio samples
+// ============================================================================
+
+// PCM 8-bit mono 8000 Hz, 4 samples
+// Unsigned input: [0x00, 0x80, 0xFF, 0x40]
+// Expected signed output (XOR 0x80): [0x80, 0x00, 0x7F, 0xC0]
+static const uint8_t decode_pcm_8bit_mono[] = {
+    'R', 'I', 'F', 'F',
+    0x28, 0x00, 0x00, 0x00,  // RIFF size = 40
+    'W', 'A', 'V', 'E',
+    'f', 'm', 't', ' ',
+    0x10, 0x00, 0x00, 0x00,  // chunk size = 16
+    0x01, 0x00,              // PCM
+    0x01, 0x00,              // mono
+    0x40, 0x1F, 0x00, 0x00,  // 8000 Hz
+    0x40, 0x1F, 0x00, 0x00,  // byte rate = 8000
+    0x01, 0x00,              // block align = 1
+    0x08, 0x00,              // 8 bits per sample
+    'd', 'a', 't', 'a',
+    0x04, 0x00, 0x00, 0x00,  // data size = 4
+    // Audio samples (unsigned)
+    0x00, 0x80, 0xFF, 0x40,
+};
+static const size_t decode_pcm_8bit_mono_len = sizeof(decode_pcm_8bit_mono);
+
+// PCM 16-bit mono 16000 Hz, 3 samples (6 bytes)
+// Samples (LE): [0, 32767, -32768]
+static const uint8_t decode_pcm_16bit_mono[] = {
+    'R', 'I', 'F', 'F',
+    0x2A, 0x00, 0x00, 0x00,  // RIFF size = 42
+    'W', 'A', 'V', 'E',
+    'f', 'm', 't', ' ',
+    0x10, 0x00, 0x00, 0x00,
+    0x01, 0x00,              // PCM
+    0x01, 0x00,              // mono
+    0x80, 0x3E, 0x00, 0x00,  // 16000 Hz
+    0x00, 0x7D, 0x00, 0x00,  // byte rate = 32000
+    0x02, 0x00,              // block align = 2
+    0x10, 0x00,              // 16 bits
+    'd', 'a', 't', 'a',
+    0x06, 0x00, 0x00, 0x00,  // data size = 6
+    // Audio samples (LE int16)
+    0x00, 0x00,  // 0
+    0xFF, 0x7F,  // 32767
+    0x00, 0x80,  // -32768
+};
+static const size_t decode_pcm_16bit_mono_len = sizeof(decode_pcm_16bit_mono);
+
+// PCM 24-bit mono 8000 Hz, 2 samples (6 bytes)
+// Pass-through test
+static const uint8_t decode_pcm_24bit_mono[] = {
+    'R', 'I', 'F', 'F',
+    0x2A, 0x00, 0x00, 0x00,  // RIFF size = 42
+    'W', 'A', 'V', 'E',
+    'f', 'm', 't', ' ',
+    0x10, 0x00, 0x00, 0x00,
+    0x01, 0x00,              // PCM
+    0x01, 0x00,              // mono
+    0x40, 0x1F, 0x00, 0x00,  // 8000 Hz
+    0xC0, 0x5D, 0x00, 0x00,  // byte rate = 24000
+    0x03, 0x00,              // block align = 3
+    0x18, 0x00,              // 24 bits
+    'd', 'a', 't', 'a',
+    0x06, 0x00, 0x00, 0x00,  // data size = 6
+    // Audio samples (LE int24)
+    0x01, 0x02, 0x03,
+    0x04, 0x05, 0x06,
+};
+static const size_t decode_pcm_24bit_mono_len = sizeof(decode_pcm_24bit_mono);
+
+// A-law mono 8000 Hz, 4 samples
+// Input: [0xD5, 0x55, 0x2A, 0xAA]
+// After XOR 0x55: [0x80, 0x00, 0x7F, 0xFF]
+// Decoded int16: [+8, -8, -32256, +32256]
+static const uint8_t decode_alaw_mono[] = {
+    'R', 'I', 'F', 'F',
+    0x28, 0x00, 0x00, 0x00,  // RIFF size = 40
+    'W', 'A', 'V', 'E',
+    'f', 'm', 't', ' ',
+    0x10, 0x00, 0x00, 0x00,
+    0x06, 0x00,              // A-law
+    0x01, 0x00,              // mono
+    0x40, 0x1F, 0x00, 0x00,  // 8000 Hz
+    0x40, 0x1F, 0x00, 0x00,  // byte rate = 8000
+    0x01, 0x00,              // block align = 1
+    0x08, 0x00,              // 8 bits
+    'd', 'a', 't', 'a',
+    0x04, 0x00, 0x00, 0x00,  // data size = 4
+    // Audio samples
+    0xD5, 0x55, 0x2A, 0xAA,
+};
+static const size_t decode_alaw_mono_len = sizeof(decode_alaw_mono);
+
+// mu-law mono 8000 Hz, 4 samples
+// Input: [0x7F, 0xFF, 0x00, 0x80]
+// Decoded int16: [0, 0, +32124, -32124]
+static const uint8_t decode_mulaw_mono[] = {
+    'R', 'I', 'F', 'F',
+    0x28, 0x00, 0x00, 0x00,  // RIFF size = 40
+    'W', 'A', 'V', 'E',
+    'f', 'm', 't', ' ',
+    0x10, 0x00, 0x00, 0x00,
+    0x07, 0x00,              // mu-law
+    0x01, 0x00,              // mono
+    0x40, 0x1F, 0x00, 0x00,  // 8000 Hz
+    0x40, 0x1F, 0x00, 0x00,  // byte rate = 8000
+    0x01, 0x00,              // block align = 1
+    0x08, 0x00,              // 8 bits
+    'd', 'a', 't', 'a',
+    0x04, 0x00, 0x00, 0x00,  // data size = 4
+    // Audio samples
+    0x7F, 0xFF, 0x00, 0x80,
+};
+static const size_t decode_mulaw_mono_len = sizeof(decode_mulaw_mono);
+
+// IEEE float 32-bit mono 48000 Hz, 2 samples (8 bytes)
+// Input floats: [0.0f, 0.5f]
+// Expected int32: [0, 1073741823]
+static const uint8_t decode_float_mono[] = {
+    'R', 'I', 'F', 'F',
+    0x2C, 0x00, 0x00, 0x00,  // RIFF size = 44
+    'W', 'A', 'V', 'E',
+    'f', 'm', 't', ' ',
+    0x10, 0x00, 0x00, 0x00,
+    0x03, 0x00,              // IEEE float
+    0x01, 0x00,              // mono
+    0x80, 0xBB, 0x00, 0x00,  // 48000 Hz
+    0x00, 0xEE, 0x02, 0x00,  // byte rate = 192000
+    0x04, 0x00,              // block align = 4
+    0x20, 0x00,              // 32 bits
+    'd', 'a', 't', 'a',
+    0x08, 0x00, 0x00, 0x00,  // data size = 8
+    // Audio samples (LE float32)
+    0x00, 0x00, 0x00, 0x00,  // 0.0f
+    0x00, 0x00, 0x00, 0x3F,  // 0.5f
+};
+static const size_t decode_float_mono_len = sizeof(decode_float_mono);
+
 }  // namespace test_data

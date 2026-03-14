@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// @file wav_header_parser.h
-/// @brief Streaming WAV header parser with byte-by-byte support
+/// @file wav_decoder.h
+/// @brief Streaming WAV decoder with byte-by-byte support
 
 #pragma once
 
@@ -22,12 +22,14 @@
 
 namespace micro_wav {
 
-enum WAVParseResult : int8_t {
-    WAV_PARSER_ERROR_NO_RIFF = -3,
-    WAV_PARSER_ERROR_NO_WAVE = -2,
-    WAV_PARSER_ERROR_FAILED = -1,
-    WAV_PARSER_HEADER_READY = 0,
-    WAV_PARSER_NEED_MORE_DATA = 1,
+enum WAVDecoderResult : int8_t {
+    WAV_DECODER_ERROR_NO_RIFF = -3,
+    WAV_DECODER_ERROR_NO_WAVE = -2,
+    WAV_DECODER_ERROR_FAILED = -1,
+    WAV_DECODER_SUCCESS = 0,
+    WAV_DECODER_HEADER_READY = 1,
+    WAV_DECODER_END_OF_STREAM = 2,
+    WAV_DECODER_NEED_MORE_DATA = 3,
 };
 
 enum WAVAudioFormat : uint16_t {  // NOLINT(performance-enum-size): matches WAV spec's 16-bit
@@ -39,13 +41,16 @@ enum WAVAudioFormat : uint16_t {  // NOLINT(performance-enum-size): matches WAV 
     WAV_FORMAT_MULAW = 0x0007,
 };
 
-class WAVHeaderParser {
+class WAVDecoder {
 public:
-    /// Feed bytes to the parser. Returns bytes consumed via output param.
-    /// After HEADER_READY, any remaining bytes in the input are audio data.
-    WAVParseResult parse(const uint8_t* input, size_t input_len, size_t& bytes_consumed);
+    /// Unified decode: parses header then decodes audio samples.
+    /// During header phase, pass output=nullptr. After HEADER_READY, provide an output buffer.
+    /// Returns SUCCESS when samples are decoded, END_OF_STREAM when all data is consumed.
+    WAVDecoderResult decode(const uint8_t* input, size_t input_len, uint8_t* output,
+                            size_t output_size_bytes, size_t& bytes_consumed,
+                            size_t& samples_decoded);
 
-    /// Reset the parser to its initial state.
+    /// Reset the decoder to its initial state.
     void reset();
 
     // Accessors (valid after HEADER_READY)
@@ -87,9 +92,11 @@ private:
         UNKNOWN,
     };
 
-    // Process the accumulated field buffer. Returns NEED_MORE_DATA to continue
-    // parsing, HEADER_READY when done, or an error.
-    WAVParseResult process_field();
+    /// Internal header parser. Feeds bytes through the state machine.
+    WAVDecoderResult parse(const uint8_t* input, size_t input_len, size_t& bytes_consumed);
+
+    // Process the accumulated field buffer.
+    WAVDecoderResult process_field();
 
     // Accumulator
     uint8_t buf_[4]{};
@@ -108,6 +115,11 @@ private:
     uint16_t bits_per_sample_{0};
     uint16_t audio_format_{0};
     uint32_t data_chunk_size_{0};
+
+    // Decode state
+    uint32_t data_bytes_remaining_{0};
+    uint8_t bytes_per_input_sample_{0};
+    uint8_t bytes_per_output_sample_{0};
 };
 
 }  // namespace micro_wav

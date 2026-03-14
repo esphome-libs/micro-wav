@@ -78,12 +78,12 @@ else()
     if(ENABLE_TESTS)
         enable_testing()
 
-        add_executable(micro_wav_tests tests/test_wav_parser.cpp)
+        add_executable(micro_wav_tests tests/test_wav_decoder.cpp)
         target_link_libraries(micro_wav_tests PRIVATE micro_wav)
         target_include_directories(micro_wav_tests PRIVATE tests)
         wav_configure_host(micro_wav_tests ${CMAKE_CURRENT_SOURCE_DIR})
 
-        add_test(NAME wav_parser_tests COMMAND micro_wav_tests)
+        add_test(NAME wav_decoder_tests COMMAND micro_wav_tests)
     endif()
 
     # WAV file writer for manual sox validation (not part of CI)

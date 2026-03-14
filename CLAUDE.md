@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-microWAV is a byte-by-byte streaming WAV header parser for resource-constrained embedded devices. It's a single-header/single-source C++11 static library with zero dynamic allocation and no external dependencies.
+microWAV is a byte-by-byte streaming WAV decoder for resource-constrained embedded devices. It's a single-header/single-source C++11 static library with zero dynamic allocation and no external dependencies.
 
 ## Build Commands
 
@@ -20,15 +20,13 @@ cmake -B build -DENABLE_WERROR=ON && cmake --build build
 pre-commit run --all-files
 ```
 
-There is no unit test suite; validation relies on clang-tidy static analysis and CI build checks.
+Tests are built with `-DENABLE_TESTS=ON` and run via `ctest --test-dir build`.
 
 ## Architecture
 
-The library is two files: `include/micro_wav/wav_header_parser.h` (public API) and `src/wav_header_parser.cpp` (implementation).
+The library is two files: `include/micro_wav/wav_decoder.h` (public API) and `src/wav_decoder.cpp` (implementation).
 
-**`WAVHeaderParser`** uses a state machine to parse WAV headers incrementally. Callers feed arbitrary-sized byte chunks via `parse()`, which returns `WAV_PARSER_NEED_MORE_DATA`, `WAV_PARSER_HEADER_READY`, or an error. Internally, a 4-byte accumulator (`buf_[4]`) collects field data, and a skip counter handles unknown chunks. States progress: RIFF tag → RIFF size → WAVE tag → chunk identification → fmt field parsing (or skip) → data chunk detection.
-
-The parser handles both standard and extended fmt chunks (WAVE_FORMAT_EXTENSIBLE) and auto-skips unknown chunks with RIFF-compliant even-byte alignment.
+**`WAVDecoder`** exposes a single `decode()` function that handles both header parsing and audio decoding. Callers feed arbitrary-sized byte chunks via `decode()`, which returns `WAV_DECODER_NEED_MORE_DATA`, `WAV_DECODER_HEADER_READY`, `WAV_DECODER_SUCCESS`, `WAV_DECODER_END_OF_STREAM`, or an error. Internally, a 4-byte accumulator (`buf_[4]`) collects field data during header parsing and buffers partial audio samples during decoding. The header parser handles both standard and extended fmt chunks (WAVE_FORMAT_EXTENSIBLE) and auto-skips unknown chunks with RIFF-compliant even-byte alignment. Audio decoding supports PCM (8/16/24/32-bit), G.711 A-law/mu-law (decoded to 16-bit PCM), and IEEE float 32-bit (decoded to 32-bit integer PCM).
 
 ## Code Style
 
