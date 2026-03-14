@@ -68,8 +68,9 @@ enum WAVAudioFormat : uint16_t {  // NOLINT(performance-enum-size): matches WAV 
 class WAVDecoder {
 public:
     /// Unified decode: parses header then decodes audio samples.
-    /// During header phase, pass output=nullptr. After HEADER_READY, provide an output buffer.
-    /// Returns SUCCESS when samples are decoded, END_OF_STREAM when all data is consumed.
+    /// The output buffer is ignored during header parsing, so it is safe to pass the same
+    /// buffer throughout. Returns SUCCESS when samples are decoded, END_OF_STREAM when all
+    /// data is consumed.
     WAVDecoderResult decode(const uint8_t* input, size_t input_len, uint8_t* output,
                             size_t output_size_bytes, size_t& bytes_consumed,
                             size_t& samples_decoded);

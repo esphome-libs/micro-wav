@@ -20,24 +20,37 @@ Streaming WAV decoder for embedded devices. Decodes WAV audio byte-by-byte with 
 #include "micro_wav/wav_decoder.h"
 
 micro_wav::WAVDecoder decoder;
+uint8_t data[512];
+uint8_t output[1024];
 size_t bytes_consumed = 0;
 size_t samples_decoded = 0;
 
-// Header phase: feed data with output=nullptr until HEADER_READY
-auto result = decoder.decode(data, len, nullptr, 0, bytes_consumed, samples_decoded);
+// Feed chunks as they arrive from a file, network socket, etc.
+while (size_t len = read_chunk(data, sizeof(data))) {
+    const uint8_t* p = data;
 
-if (result == micro_wav::WAV_DECODER_HEADER_READY) {
-    uint32_t rate = decoder.get_sample_rate();
-    uint16_t channels = decoder.get_channels();
-    uint16_t bps = decoder.get_bits_per_sample();  // output depth
-    auto fmt = decoder.get_audio_format();
+    while (len > 0) {
+        auto result = decoder.decode(p, len, output, sizeof(output),
+                                     bytes_consumed, samples_decoded);
+        p += bytes_consumed;
+        len -= bytes_consumed;
 
-    // Audio phase: decode samples into output buffer
-    uint8_t output[1024];
-    result = decoder.decode(audio_data, audio_len, output, sizeof(output),
-                            bytes_consumed, samples_decoded);
-    // WAV_DECODER_SUCCESS = samples decoded
-    // WAV_DECODER_END_OF_STREAM = all data consumed
+        if (result == micro_wav::WAV_DECODER_HEADER_READY) {
+            // Header parsed — stream info is now available
+            uint32_t rate = decoder.get_sample_rate();
+            uint16_t channels = decoder.get_channels();
+            uint16_t bps = decoder.get_bits_per_sample();
+        } else if (result == micro_wav::WAV_DECODER_SUCCESS) {
+            // output contains samples_decoded decoded samples
+            process_audio(output, samples_decoded);
+        } else if (result == micro_wav::WAV_DECODER_END_OF_STREAM) {
+            return;
+        } else if (result < 0) {
+            handle_error(result);
+            return;
+        }
+        // NEED_MORE_DATA: inner loop exits, outer loop reads next chunk
+    }
 }
 ```
 
@@ -52,8 +65,8 @@ if (result == micro_wav::WAV_DECODER_HEADER_READY) {
 | `WAV_DECODER_END_OF_STREAM` | All data chunk bytes consumed |
 | `WAV_DECODER_NEED_MORE_DATA` | More bytes needed; call `decode()` again with additional data |
 | `WAV_DECODER_WARNING_OUTPUT_TOO_SMALL` | Output buffer is null or too small for one sample |
-| `WAV_DECODER_ERROR_UNSUPPORTED` | Audio format not supported (e.g., 64-bit float, unknown codec) |
-| `WAV_DECODER_ERROR_FAILED` | Generic decode failure (e.g., malformed chunk) |
+| `WAV_DECODER_ERROR_UNSUPPORTED` | Audio format not supported; e.g., 64-bit float, unknown codec |
+| `WAV_DECODER_ERROR_FAILED` | Generic decode failure; e.g., malformed chunk) |
 | `WAV_DECODER_ERROR_NO_WAVE` | RIFF container found but missing WAVE identifier |
 | `WAV_DECODER_ERROR_NO_RIFF` | Input does not start with a RIFF tag |
 
