@@ -30,6 +30,15 @@ enum WAVParseResult : int8_t {
     WAV_PARSER_NEED_MORE_DATA = 1,
 };
 
+enum WAVAudioFormat : uint16_t {  // NOLINT(performance-enum-size): matches WAV spec's 16-bit
+                                  // wFormatTag
+    WAV_FORMAT_UNKNOWN = 0x0000,
+    WAV_FORMAT_PCM = 0x0001,
+    WAV_FORMAT_IEEE_FLOAT = 0x0003,
+    WAV_FORMAT_ALAW = 0x0006,
+    WAV_FORMAT_MULAW = 0x0007,
+};
+
 class WAVHeaderParser {
 public:
     /// Feed bytes to the parser. Returns bytes consumed via output param.
@@ -49,9 +58,7 @@ public:
     uint16_t bits_per_sample() const {
         return bits_per_sample_;
     }
-    uint16_t audio_format() const {
-        return audio_format_;
-    }
+    WAVAudioFormat audio_format() const;
     uint32_t data_chunk_size() const {
         return data_chunk_size_;
     }

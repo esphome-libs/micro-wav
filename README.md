@@ -28,7 +28,7 @@ if (result == micro_wav::WAV_PARSER_HEADER_READY) {
     uint32_t rate = parser.sample_rate();
     uint16_t channels = parser.num_channels();
     uint16_t bps = parser.bits_per_sample();
-    uint16_t fmt = parser.audio_format();       // 1=PCM, 3=IEEE float, etc.
+    auto fmt = parser.audio_format();             // WAV_FORMAT_PCM, WAV_FORMAT_IEEE_FLOAT, etc.
     uint32_t data_size = parser.data_chunk_size();
 }
 ```
@@ -44,6 +44,18 @@ if (result == micro_wav::WAV_PARSER_HEADER_READY) {
 | `WAV_PARSER_ERROR_FAILED` | Generic parse failure (e.g., malformed chunk) |
 | `WAV_PARSER_ERROR_NO_WAVE` | RIFF container found but missing WAVE identifier |
 | `WAV_PARSER_ERROR_NO_RIFF` | Input does not start with a RIFF tag |
+
+## Audio Formats
+
+`audio_format()` returns `WAVAudioFormat` after the header is parsed. Known format tags are mapped to named values; unrecognized tags return `WAV_FORMAT_UNKNOWN`.
+
+| Value | Description |
+|---|---|
+| `WAV_FORMAT_PCM` | Uncompressed integer PCM |
+| `WAV_FORMAT_IEEE_FLOAT` | IEEE 754 floating-point |
+| `WAV_FORMAT_ALAW` | A-law companded |
+| `WAV_FORMAT_MULAW` | μ-law companded |
+| `WAV_FORMAT_UNKNOWN` | Unrecognized format tag |
 
 ## Integration
 

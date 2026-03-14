@@ -48,6 +48,18 @@ static uint32_t pad_to_even(uint32_t size) {
     return (size + 1) & ~static_cast<uint32_t>(1);
 }
 
+WAVAudioFormat WAVHeaderParser::audio_format() const {
+    switch (audio_format_) {
+        case WAV_FORMAT_PCM:
+        case WAV_FORMAT_IEEE_FLOAT:
+        case WAV_FORMAT_ALAW:
+        case WAV_FORMAT_MULAW:
+            return static_cast<WAVAudioFormat>(audio_format_);
+        default:
+            return WAV_FORMAT_UNKNOWN;
+    }
+}
+
 void WAVHeaderParser::reset() {
     buf_len_ = 0;
     buf_needed_ = 4;
