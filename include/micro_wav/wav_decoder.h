@@ -55,22 +55,31 @@ public:
     /// Reset the decoder to its initial state.
     void reset();
 
-    // Accessors (valid after HEADER_READY)
-    uint32_t sample_rate() const {
+    /// @name Accessors (valid after HEADER_READY)
+    /// @{
+
+    /// @brief Returns the sample rate in Hz.
+    uint32_t get_sample_rate() const {
         return sample_rate_;
     }
-    uint16_t num_channels() const {
+    /// @brief Returns the number of audio channels.
+    uint16_t get_channels() const {
         return num_channels_;
     }
-    /// Returns the output bit depth. For A-law/mu-law sources this is 16
-    /// (decoded from 8-bit), not the original WAV header value.
-    uint16_t bits_per_sample() const {
+    /// @brief Returns the output bit depth per sample.
+    /// @note For A-law/mu-law sources this is 16 (decoded from 8-bit), not the
+    ///   original WAV header value.
+    uint16_t get_bits_per_sample() const {
         return bits_per_sample_;
     }
-    WAVAudioFormat audio_format() const;
-    uint32_t data_chunk_size() const {
+    /// @brief Returns the audio format tag from the WAV header.
+    WAVAudioFormat get_audio_format() const;
+    /// @brief Returns the size of the data chunk in bytes.
+    uint32_t get_data_chunk_size() const {
         return data_chunk_size_;
     }
+
+    /// @}
 
 private:
     enum class State : uint8_t {

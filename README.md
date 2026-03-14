@@ -27,10 +27,10 @@ size_t samples_decoded = 0;
 auto result = decoder.decode(data, len, nullptr, 0, bytes_consumed, samples_decoded);
 
 if (result == micro_wav::WAV_DECODER_HEADER_READY) {
-    uint32_t rate = decoder.sample_rate();
-    uint16_t channels = decoder.num_channels();
-    uint16_t bps = decoder.bits_per_sample();  // output depth
-    auto fmt = decoder.audio_format();
+    uint32_t rate = decoder.get_sample_rate();
+    uint16_t channels = decoder.get_channels();
+    uint16_t bps = decoder.get_bits_per_sample();  // output depth
+    auto fmt = decoder.get_audio_format();
 
     // Audio phase: decode samples into output buffer
     uint8_t output[1024];
@@ -59,7 +59,7 @@ if (result == micro_wav::WAV_DECODER_HEADER_READY) {
 
 ## Audio Formats
 
-`audio_format()` returns `WAVAudioFormat` after the header is parsed. Known format tags are mapped to named values; unrecognized tags return `WAV_FORMAT_UNKNOWN`.
+`get_audio_format()` returns `WAVAudioFormat` after the header is parsed. Known format tags are mapped to named values; unrecognized tags return `WAV_FORMAT_UNKNOWN`.
 
 | Value | Description |
 |---|---|

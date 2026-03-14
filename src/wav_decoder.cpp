@@ -139,7 +139,7 @@ static void convert_sample(WAVAudioFormat fmt, uint8_t bytes_per_input, const ui
     }
 }
 
-WAVAudioFormat WAVDecoder::audio_format() const {
+WAVAudioFormat WAVDecoder::get_audio_format() const {
     switch (audio_format_) {
         case WAV_FORMAT_PCM:
         case WAV_FORMAT_IEEE_FLOAT:
@@ -360,7 +360,7 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
         // Set up decode state
         data_bytes_remaining_ = data_chunk_size_;
 
-        switch (audio_format()) {
+        switch (get_audio_format()) {
             case WAV_FORMAT_PCM:
                 if (bits_per_sample_ == 0 || bits_per_sample_ % 8 != 0) {
                     return WAV_DECODER_ERROR_UNSUPPORTED;
@@ -406,7 +406,7 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
         return WAV_DECODER_WARNING_OUTPUT_TOO_SMALL;
     }
 
-    WAVAudioFormat fmt = audio_format();
+    WAVAudioFormat fmt = get_audio_format();
 
     // Step 1: Complete any partial sample buffered from a previous call
     if (buf_len_ > 0) {

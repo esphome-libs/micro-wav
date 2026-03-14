@@ -104,8 +104,8 @@ static WAVDecoderResult decode_all(WAVDecoder& decoder, const uint8_t* data, siz
         size_t decoded = 0;
         last_result = decoder.decode(
             data + pos, len - pos,
-            output + total_samples * decoder.bits_per_sample() / 8,
-            output_size - total_samples * decoder.bits_per_sample() / 8, consumed, decoded);
+            output + total_samples * decoder.get_bits_per_sample() / 8,
+            output_size - total_samples * decoder.get_bits_per_sample() / 8, consumed, decoded);
         pos += consumed;
         total_samples += decoded;
     }
@@ -121,11 +121,11 @@ static bool test_pcm_16bit_mono_16000hz() {
     WAVDecoderResult result = decode_header(decoder, test_data::pcm_16bit_mono_16000hz,
                                             test_data::pcm_16bit_mono_16000hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_PCM, "audio format");
-    CHECK(decoder.num_channels() == 1, "channels");
-    CHECK(decoder.sample_rate() == 16000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 16, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 1000, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_PCM, "audio format");
+    CHECK(decoder.get_channels() == 1, "channels");
+    CHECK(decoder.get_sample_rate() == 16000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 16, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 1000, "data chunk size");
     return true;
 }
 
@@ -134,11 +134,11 @@ static bool test_pcm_16bit_stereo_44100hz() {
     WAVDecoderResult result = decode_header(decoder, test_data::pcm_16bit_stereo_44100hz,
                                             test_data::pcm_16bit_stereo_44100hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_PCM, "audio format");
-    CHECK(decoder.num_channels() == 2, "channels");
-    CHECK(decoder.sample_rate() == 44100, "sample rate");
-    CHECK(decoder.bits_per_sample() == 16, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 8820, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_PCM, "audio format");
+    CHECK(decoder.get_channels() == 2, "channels");
+    CHECK(decoder.get_sample_rate() == 44100, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 16, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 8820, "data chunk size");
     return true;
 }
 
@@ -147,11 +147,11 @@ static bool test_pcm_32bit_mono_48000hz() {
     WAVDecoderResult result = decode_header(decoder, test_data::pcm_32bit_mono_48000hz,
                                             test_data::pcm_32bit_mono_48000hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_PCM, "audio format");
-    CHECK(decoder.num_channels() == 1, "channels");
-    CHECK(decoder.sample_rate() == 48000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 32, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 4800, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_PCM, "audio format");
+    CHECK(decoder.get_channels() == 1, "channels");
+    CHECK(decoder.get_sample_rate() == 48000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 32, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 4800, "data chunk size");
     return true;
 }
 
@@ -160,11 +160,11 @@ static bool test_float_32bit_stereo_48000hz() {
     WAVDecoderResult result = decode_header(decoder, test_data::float_32bit_stereo_48000hz,
                                             test_data::float_32bit_stereo_48000hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_IEEE_FLOAT, "audio format");
-    CHECK(decoder.num_channels() == 2, "channels");
-    CHECK(decoder.sample_rate() == 48000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 32, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 3200, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_IEEE_FLOAT, "audio format");
+    CHECK(decoder.get_channels() == 2, "channels");
+    CHECK(decoder.get_sample_rate() == 48000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 32, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 3200, "data chunk size");
     return true;
 }
 
@@ -173,11 +173,11 @@ static bool test_alaw_8bit_mono_8000hz() {
     WAVDecoderResult result = decode_header(decoder, test_data::alaw_8bit_mono_8000hz,
                                             test_data::alaw_8bit_mono_8000hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_ALAW, "audio format");
-    CHECK(decoder.num_channels() == 1, "channels");
-    CHECK(decoder.sample_rate() == 8000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 16, "bits per sample (after decode setup)");
-    CHECK(decoder.data_chunk_size() == 2000, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_ALAW, "audio format");
+    CHECK(decoder.get_channels() == 1, "channels");
+    CHECK(decoder.get_sample_rate() == 8000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 16, "bits per sample (after decode setup)");
+    CHECK(decoder.get_data_chunk_size() == 2000, "data chunk size");
     return true;
 }
 
@@ -186,11 +186,11 @@ static bool test_mulaw_8bit_mono_8000hz() {
     WAVDecoderResult result = decode_header(decoder, test_data::mulaw_8bit_mono_8000hz,
                                             test_data::mulaw_8bit_mono_8000hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_MULAW, "audio format");
-    CHECK(decoder.num_channels() == 1, "channels");
-    CHECK(decoder.sample_rate() == 8000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 16, "bits per sample (after decode setup)");
-    CHECK(decoder.data_chunk_size() == 2000, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_MULAW, "audio format");
+    CHECK(decoder.get_channels() == 1, "channels");
+    CHECK(decoder.get_sample_rate() == 8000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 16, "bits per sample (after decode setup)");
+    CHECK(decoder.get_data_chunk_size() == 2000, "data chunk size");
     return true;
 }
 
@@ -199,11 +199,11 @@ static bool test_unknown_chunk_before_fmt() {
     WAVDecoderResult result = decode_header(decoder, test_data::pcm_with_unknown_chunk,
                                             test_data::pcm_with_unknown_chunk_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_PCM, "audio format");
-    CHECK(decoder.num_channels() == 1, "channels");
-    CHECK(decoder.sample_rate() == 16000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 16, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 1000, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_PCM, "audio format");
+    CHECK(decoder.get_channels() == 1, "channels");
+    CHECK(decoder.get_sample_rate() == 16000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 16, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 1000, "data chunk size");
     return true;
 }
 
@@ -212,11 +212,11 @@ static bool test_unknown_chunk_after_fmt() {
     WAVDecoderResult result = decode_header(decoder, test_data::pcm_with_unknown_after_fmt,
                                             test_data::pcm_with_unknown_after_fmt_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_PCM, "audio format");
-    CHECK(decoder.num_channels() == 1, "channels");
-    CHECK(decoder.sample_rate() == 16000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 16, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 1000, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_PCM, "audio format");
+    CHECK(decoder.get_channels() == 1, "channels");
+    CHECK(decoder.get_sample_rate() == 16000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 16, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 1000, "data chunk size");
     return true;
 }
 
@@ -226,11 +226,11 @@ static bool test_extensible_pcm_24bit() {
         decode_header(decoder, test_data::extensible_pcm_24bit_stereo_96000hz,
                       test_data::extensible_pcm_24bit_stereo_96000hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_PCM, "audio format (from subformat)");
-    CHECK(decoder.num_channels() == 2, "channels");
-    CHECK(decoder.sample_rate() == 96000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 24, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 5760, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_PCM, "audio format (from subformat)");
+    CHECK(decoder.get_channels() == 2, "channels");
+    CHECK(decoder.get_sample_rate() == 96000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 24, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 5760, "data chunk size");
     return true;
 }
 
@@ -240,11 +240,11 @@ static bool test_extensible_float_32bit() {
         decode_header(decoder, test_data::extensible_float_32bit_mono_44100hz,
                       test_data::extensible_float_32bit_mono_44100hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_IEEE_FLOAT, "audio format (from subformat)");
-    CHECK(decoder.num_channels() == 1, "channels");
-    CHECK(decoder.sample_rate() == 44100, "sample rate");
-    CHECK(decoder.bits_per_sample() == 32, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 4410, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_IEEE_FLOAT, "audio format (from subformat)");
+    CHECK(decoder.get_channels() == 1, "channels");
+    CHECK(decoder.get_sample_rate() == 44100, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 32, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 4410, "data chunk size");
     return true;
 }
 
@@ -253,11 +253,11 @@ static bool test_fmt_size_18() {
     WAVDecoderResult result =
         decode_header(decoder, test_data::pcm_fmt_size_18, test_data::pcm_fmt_size_18_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
-    CHECK(decoder.audio_format() == WAV_FORMAT_PCM, "audio format");
-    CHECK(decoder.num_channels() == 1, "channels");
-    CHECK(decoder.sample_rate() == 16000, "sample rate");
-    CHECK(decoder.bits_per_sample() == 16, "bits per sample");
-    CHECK(decoder.data_chunk_size() == 1000, "data chunk size");
+    CHECK(decoder.get_audio_format() == WAV_FORMAT_PCM, "audio format");
+    CHECK(decoder.get_channels() == 1, "channels");
+    CHECK(decoder.get_sample_rate() == 16000, "sample rate");
+    CHECK(decoder.get_bits_per_sample() == 16, "bits per sample");
+    CHECK(decoder.get_data_chunk_size() == 1000, "data chunk size");
     return true;
 }
 
@@ -310,7 +310,7 @@ static bool test_decode_pcm_8bit() {
                    test_data::decode_pcm_8bit_mono_len, output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 4, "4 samples decoded");
-    CHECK(decoder.bits_per_sample() == 8, "output bps = 8");
+    CHECK(decoder.get_bits_per_sample() == 8, "output bps = 8");
     // 0x00 unsigned -> 0x80 signed, 0x80->0x00, 0xFF->0x7F, 0x40->0xC0
     CHECK(output[0] == 0x80, "sample 0");
     CHECK(output[1] == 0x00, "sample 1");
@@ -328,7 +328,7 @@ static bool test_decode_pcm_16bit() {
                    test_data::decode_pcm_16bit_mono_len, output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 3, "3 samples decoded");
-    CHECK(decoder.bits_per_sample() == 16, "output bps = 16");
+    CHECK(decoder.get_bits_per_sample() == 16, "output bps = 16");
     // Pass-through: bytes should match input audio
     CHECK(output[0] == 0x00 && output[1] == 0x00, "sample 0 = 0");
     CHECK(output[2] == 0xFF && output[3] == 0x7F, "sample 1 = 32767");
@@ -345,7 +345,7 @@ static bool test_decode_pcm_24bit() {
                    test_data::decode_pcm_24bit_mono_len, output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 2, "2 samples decoded");
-    CHECK(decoder.bits_per_sample() == 24, "output bps = 24");
+    CHECK(decoder.get_bits_per_sample() == 24, "output bps = 24");
     // Pass-through
     CHECK(output[0] == 0x01 && output[1] == 0x02 && output[2] == 0x03, "sample 0");
     CHECK(output[3] == 0x04 && output[4] == 0x05 && output[5] == 0x06, "sample 1");
@@ -373,7 +373,7 @@ static bool test_decode_alaw() {
                    output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 4, "4 samples decoded");
-    CHECK(decoder.bits_per_sample() == 16, "output bps = 16");
+    CHECK(decoder.get_bits_per_sample() == 16, "output bps = 16");
     CHECK(read_le16(output + 0) == 8, "sample 0 = +8");
     CHECK(read_le16(output + 2) == -8, "sample 1 = -8");
     CHECK(read_le16(output + 4) == -32256, "sample 2 = -32256");
@@ -390,7 +390,7 @@ static bool test_decode_mulaw() {
                    output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 4, "4 samples decoded");
-    CHECK(decoder.bits_per_sample() == 16, "output bps = 16");
+    CHECK(decoder.get_bits_per_sample() == 16, "output bps = 16");
     CHECK(read_le16(output + 0) == 0, "sample 0 = 0");
     CHECK(read_le16(output + 2) == 0, "sample 1 = 0");
     CHECK(read_le16(output + 4) == 32124, "sample 2 = +32124");
@@ -407,7 +407,7 @@ static bool test_decode_float() {
                    output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 2, "2 samples decoded");
-    CHECK(decoder.bits_per_sample() == 32, "output bps = 32");
+    CHECK(decoder.get_bits_per_sample() == 32, "output bps = 32");
     CHECK(read_le32(output + 0) == 0, "sample 0 = 0");
     // 0.5 * 2147483647 = 1073741823.5, truncated to 1073741823
     CHECK(read_le32(output + 4) == 1073741823, "sample 1 = 1073741823");
@@ -448,7 +448,7 @@ static bool test_decode_streaming() {
         pos += consumed;
     }
     CHECK(result == WAV_DECODER_HEADER_READY, "header ready after streaming");
-    CHECK(decoder.bits_per_sample() == 16, "output bps = 16");
+    CHECK(decoder.get_bits_per_sample() == 16, "output bps = 16");
 
     // Audio phase: feed byte by byte
     uint8_t output[6];
@@ -520,11 +520,11 @@ static bool test_streaming_byte_by_byte() {
             fprintf(stderr, "  FAIL: streaming byte-by-byte %s: bad result %d\n", tc.name, result);
             return false;
         }
-        if (decoder.audio_format() != tc.expected_format ||
-            decoder.num_channels() != tc.expected_channels ||
-            decoder.sample_rate() != tc.expected_sample_rate ||
-            decoder.bits_per_sample() != tc.expected_bits ||
-            decoder.data_chunk_size() != tc.expected_data_size) {
+        if (decoder.get_audio_format() != tc.expected_format ||
+            decoder.get_channels() != tc.expected_channels ||
+            decoder.get_sample_rate() != tc.expected_sample_rate ||
+            decoder.get_bits_per_sample() != tc.expected_bits ||
+            decoder.get_data_chunk_size() != tc.expected_data_size) {
             fprintf(stderr, "  FAIL: streaming byte-by-byte %s: field mismatch\n", tc.name);
             return false;
         }
@@ -540,11 +540,11 @@ static bool test_streaming_two_bytes() {
             fprintf(stderr, "  FAIL: streaming 2-byte %s: bad result %d\n", tc.name, result);
             return false;
         }
-        if (decoder.audio_format() != tc.expected_format ||
-            decoder.num_channels() != tc.expected_channels ||
-            decoder.sample_rate() != tc.expected_sample_rate ||
-            decoder.bits_per_sample() != tc.expected_bits ||
-            decoder.data_chunk_size() != tc.expected_data_size) {
+        if (decoder.get_audio_format() != tc.expected_format ||
+            decoder.get_channels() != tc.expected_channels ||
+            decoder.get_sample_rate() != tc.expected_sample_rate ||
+            decoder.get_bits_per_sample() != tc.expected_bits ||
+            decoder.get_data_chunk_size() != tc.expected_data_size) {
             fprintf(stderr, "  FAIL: streaming 2-byte %s: field mismatch\n", tc.name);
             return false;
         }
@@ -560,11 +560,11 @@ static bool test_streaming_three_bytes() {
             fprintf(stderr, "  FAIL: streaming 3-byte %s: bad result %d\n", tc.name, result);
             return false;
         }
-        if (decoder.audio_format() != tc.expected_format ||
-            decoder.num_channels() != tc.expected_channels ||
-            decoder.sample_rate() != tc.expected_sample_rate ||
-            decoder.bits_per_sample() != tc.expected_bits ||
-            decoder.data_chunk_size() != tc.expected_data_size) {
+        if (decoder.get_audio_format() != tc.expected_format ||
+            decoder.get_channels() != tc.expected_channels ||
+            decoder.get_sample_rate() != tc.expected_sample_rate ||
+            decoder.get_bits_per_sample() != tc.expected_bits ||
+            decoder.get_data_chunk_size() != tc.expected_data_size) {
             fprintf(stderr, "  FAIL: streaming 3-byte %s: field mismatch\n", tc.name);
             return false;
         }
@@ -580,11 +580,11 @@ static bool test_streaming_five_bytes() {
             fprintf(stderr, "  FAIL: streaming 5-byte %s: bad result %d\n", tc.name, result);
             return false;
         }
-        if (decoder.audio_format() != tc.expected_format ||
-            decoder.num_channels() != tc.expected_channels ||
-            decoder.sample_rate() != tc.expected_sample_rate ||
-            decoder.bits_per_sample() != tc.expected_bits ||
-            decoder.data_chunk_size() != tc.expected_data_size) {
+        if (decoder.get_audio_format() != tc.expected_format ||
+            decoder.get_channels() != tc.expected_channels ||
+            decoder.get_sample_rate() != tc.expected_sample_rate ||
+            decoder.get_bits_per_sample() != tc.expected_bits ||
+            decoder.get_data_chunk_size() != tc.expected_data_size) {
             fprintf(stderr, "  FAIL: streaming 5-byte %s: field mismatch\n", tc.name);
             return false;
         }
@@ -603,15 +603,15 @@ static bool test_reset() {
     WAVDecoderResult result = decode_header(decoder, test_data::pcm_16bit_mono_16000hz,
                                             test_data::pcm_16bit_mono_16000hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "first decode");
-    CHECK(decoder.sample_rate() == 16000, "first sample rate");
+    CHECK(decoder.get_sample_rate() == 16000, "first sample rate");
 
     // Reset and decode a different header
     decoder.reset();
     result = decode_header(decoder, test_data::pcm_16bit_stereo_44100hz,
                            test_data::pcm_16bit_stereo_44100hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "second decode after reset");
-    CHECK(decoder.sample_rate() == 44100, "second sample rate");
-    CHECK(decoder.num_channels() == 2, "second channels");
+    CHECK(decoder.get_sample_rate() == 44100, "second sample rate");
+    CHECK(decoder.get_channels() == 2, "second channels");
     return true;
 }
 
