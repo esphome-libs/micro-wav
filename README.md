@@ -2,6 +2,8 @@
 
 Streaming WAV header parser for embedded devices. Parses WAV headers byte-by-byte with a 4-byte internal accumulator. No buffering required.
 
+[![A project from the Open Home Foundation](https://www.openhomefoundation.org/badges/ohf-project.png)](https://www.openhomefoundation.org/)
+
 ## Features
 
 - Byte-by-byte streaming: feed data in any chunk size
