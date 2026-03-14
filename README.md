@@ -33,6 +33,18 @@ if (result == micro_wav::WAV_PARSER_HEADER_READY) {
 }
 ```
 
+## Result Codes
+
+`parse()` returns `WAVParseResult`: non-negative values indicate success/informational states, negative values indicate errors. See `wav_header_parser.h` for the full enum.
+
+| Value | Description |
+|---|---|
+| `WAV_PARSER_NEED_MORE_DATA` | More bytes needed; call `parse()` again with additional data |
+| `WAV_PARSER_HEADER_READY` | Header fully parsed; remaining bytes (`input + bytes_consumed`) are audio data |
+| `WAV_PARSER_ERROR_FAILED` | Generic parse failure (e.g., malformed chunk) |
+| `WAV_PARSER_ERROR_NO_WAVE` | RIFF container found but missing WAVE identifier |
+| `WAV_PARSER_ERROR_NO_RIFF` | Input does not start with a RIFF tag |
+
 ## Integration
 
 **ESP-IDF Component Manager:**
