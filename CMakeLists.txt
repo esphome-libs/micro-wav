@@ -68,8 +68,28 @@ else()
 
     # Host build options
     option(ENABLE_WERROR "Treat warnings as errors" OFF)
+    option(ENABLE_TESTS "Build tests" OFF)
+    option(BUILD_TEST_WAV_WRITER "Build WAV file writer for sox validation" OFF)
 
     # Apply host configuration
     wav_configure_host(micro_wav ${CMAKE_CURRENT_SOURCE_DIR})
+
+    # Tests
+    if(ENABLE_TESTS)
+        enable_testing()
+
+        add_executable(micro_wav_tests tests/test_wav_parser.cpp)
+        target_link_libraries(micro_wav_tests PRIVATE micro_wav)
+        target_include_directories(micro_wav_tests PRIVATE tests)
+        wav_configure_host(micro_wav_tests ${CMAKE_CURRENT_SOURCE_DIR})
+
+        add_test(NAME wav_parser_tests COMMAND micro_wav_tests)
+    endif()
+
+    # WAV file writer for manual sox validation (not part of CI)
+    if(BUILD_TEST_WAV_WRITER)
+        add_executable(write_test_wavs tests/write_test_wavs.cpp)
+        target_include_directories(write_test_wavs PRIVATE tests)
+    endif()
 
 endif()
