@@ -8,13 +8,12 @@ Streaming WAV decoder for embedded devices. Decodes WAV audio to PCM byte-by-byt
 
 ## Features
 
+- **Wide format support**: Decodes PCM (8/16/24/32-bit), G.711 A-law/mu-law, and IEEE float 32-bit
 - **Byte-by-byte streaming**: Feed data in any chunk size
 - **Single API**: One `decode()` call for both header parsing and audio decoding
-- **Wide format support**: Decodes PCM (8/16/24/32-bit), G.711 A-law/mu-law, and IEEE float 32-bit
 - **Chunk-aware**: Automatically skips unknown chunks (LIST, INFO, etc.)
 - **Extensible headers**: Handles standard and extended fmt chunks (WAVE_FORMAT_EXTENSIBLE)
 - **No dynamic allocation**: Zero heap usage
-- **Minimal dependencies**: C++11, no STL containers
 
 ## Usage Example
 
