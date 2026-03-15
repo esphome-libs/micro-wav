@@ -102,8 +102,6 @@ static int16_t decode_mulaw_sample(uint8_t mu_val) {
 }
 
 // NOTE: Assumes the host platform uses little-endian IEEE 754 floats.
-// This is true for all supported targets (ESP32, x86, ARM Cortex) but will
-// produce incorrect results on big-endian platforms.
 static int32_t decode_float_to_int32(const uint8_t* bytes) {
     float f = 0.0F;
     memcpy(&f, bytes, sizeof(f));
