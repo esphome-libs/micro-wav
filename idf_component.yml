@@ -1,0 +1,22 @@
+## IDF Component Manager Manifest File
+name: "micro-wav"
+dependencies:
+  idf: ">=4.4"
+description: "Streaming WAV decoder optimized for embedded devices"
+license: "Apache-2.0"
+maintainers:
+  - Kevin Ahrendt <kevin.ahrendt@openhomefoundation.org>
+version: "1.0.0"
+url: https://github.com/esphome-libs/micro-wav
+repository: https://github.com/esphome-libs/micro-wav.git
+files:
+  exclude:
+    - ".claude/**"
+    - ".github/**"
+    - ".clang-*"
+    - ".clangd"
+    - ".markdownlint.yaml"
+    - ".pre-commit-config.yaml"
+    - "CLAUDE.md"
+    - "tests/**"
+    - "script/**"
