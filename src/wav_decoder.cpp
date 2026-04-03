@@ -251,6 +251,14 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
     // Audio decoding phase
     bytes_consumed = 0;
 
+    // Null input with zero length: nothing to feed, return current status
+    if (input == nullptr) {
+        if (this->data_bytes_remaining_ == 0 && this->buf_len_ == 0) {
+            return WAV_DECODER_END_OF_STREAM;
+        }
+        return WAV_DECODER_NEED_MORE_DATA;
+    }
+
     // End of stream: no data remaining (discard any partial sample in buf_)
     if (this->data_bytes_remaining_ == 0 && this->buf_len_ == 0) {
         return WAV_DECODER_END_OF_STREAM;

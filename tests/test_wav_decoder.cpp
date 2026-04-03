@@ -26,7 +26,8 @@ static int tests_passed = 0;
 
 #define CHECK(cond, msg)                                                              \
     do {                                                                              \
-        if (!(cond)) {                                                                \
+        const bool check_ok_ = (cond);                                                \
+        if (!check_ok_) {                                                             \
             fprintf(stderr, "  FAIL: %s (line %d)\n    condition: %s\n", msg,         \
                     __LINE__, #cond);                                                 \
             return false;                                                             \
@@ -93,8 +94,12 @@ static WAVDecoderResult decode_all(WAVDecoder& decoder, const uint8_t* data, siz
         WAVDecoderResult result =
             decoder.decode(data + pos, len - pos, nullptr, 0, consumed, decoded);
         pos += consumed;
-        if (result == WAV_DECODER_HEADER_READY) break;
-        if (result != WAV_DECODER_NEED_MORE_DATA) return result;
+        if (result == WAV_DECODER_HEADER_READY) {
+            break;
+        }
+        if (result != WAV_DECODER_NEED_MORE_DATA) {
+            return result;
+        }
     }
 
     // Audio decode phase
@@ -453,7 +458,6 @@ static bool test_decode_streaming() {
     // Audio phase: feed byte by byte
     uint8_t output[6];
     size_t total = 0;
-    result = WAV_DECODER_SUCCESS;
     while (pos < len) {
         size_t consumed = 0;
         size_t decoded = 0;
@@ -461,7 +465,9 @@ static bool test_decode_streaming() {
                                 consumed, decoded);
         pos += consumed;
         total += decoded;
-        if (result == WAV_DECODER_END_OF_STREAM) break;
+        if (result == WAV_DECODER_END_OF_STREAM) {
+            break;
+        }
     }
     // With byte-by-byte feeding of 16-bit samples, we only get a full sample every 2 bytes
     CHECK(total == 3, "3 samples decoded via streaming");
@@ -486,7 +492,7 @@ struct StreamingTestCase {
     uint32_t expected_data_size;
 };
 
-static const StreamingTestCase streaming_cases[] = {
+static const StreamingTestCase STREAMING_CASES[] = {
     {"pcm_16bit_mono_16000hz", test_data::pcm_16bit_mono_16000hz,
      test_data::pcm_16bit_mono_16000hz_len, WAV_FORMAT_PCM, 1, 16000, 16, 1000},
     {"pcm_16bit_stereo_44100hz", test_data::pcm_16bit_stereo_44100hz,
@@ -513,7 +519,7 @@ static const StreamingTestCase streaming_cases[] = {
 };
 
 static bool test_streaming_byte_by_byte() {
-    for (const auto& tc : streaming_cases) {
+    for (const auto& tc : STREAMING_CASES) {
         WAVDecoder decoder;
         WAVDecoderResult result = decode_header_chunked(decoder, tc.data, tc.len, 1);
         if (result != WAV_DECODER_HEADER_READY) {
@@ -533,7 +539,7 @@ static bool test_streaming_byte_by_byte() {
 }
 
 static bool test_streaming_two_bytes() {
-    for (const auto& tc : streaming_cases) {
+    for (const auto& tc : STREAMING_CASES) {
         WAVDecoder decoder;
         WAVDecoderResult result = decode_header_chunked(decoder, tc.data, tc.len, 2);
         if (result != WAV_DECODER_HEADER_READY) {
@@ -553,7 +559,7 @@ static bool test_streaming_two_bytes() {
 }
 
 static bool test_streaming_three_bytes() {
-    for (const auto& tc : streaming_cases) {
+    for (const auto& tc : STREAMING_CASES) {
         WAVDecoder decoder;
         WAVDecoderResult result = decode_header_chunked(decoder, tc.data, tc.len, 3);
         if (result != WAV_DECODER_HEADER_READY) {
@@ -573,7 +579,7 @@ static bool test_streaming_three_bytes() {
 }
 
 static bool test_streaming_five_bytes() {
-    for (const auto& tc : streaming_cases) {
+    for (const auto& tc : STREAMING_CASES) {
         WAVDecoder decoder;
         WAVDecoderResult result = decode_header_chunked(decoder, tc.data, tc.len, 5);
         if (result != WAV_DECODER_HEADER_READY) {
@@ -621,11 +627,12 @@ static bool test_reset() {
 
 static bool test_incomplete_data() {
     WAVDecoder decoder;
-    // Feed only the first 10 bytes (partial RIFF header)
+    // Feed only a partial RIFF header
+    static constexpr size_t PARTIAL_HEADER_SIZE = 10;
     size_t consumed = 0;
     size_t decoded = 0;
-    WAVDecoderResult result =
-        decoder.decode(test_data::pcm_16bit_mono_16000hz, 10, nullptr, 0, consumed, decoded);
+    WAVDecoderResult result = decoder.decode(test_data::pcm_16bit_mono_16000hz,
+                                             PARTIAL_HEADER_SIZE, nullptr, 0, consumed, decoded);
     CHECK(result == WAV_DECODER_NEED_MORE_DATA, "partial feed returns NEED_MORE_DATA");
     return true;
 }

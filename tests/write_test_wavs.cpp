@@ -65,6 +65,7 @@ static bool write_wav(const char* filename, const uint8_t* header, size_t header
 int main() {
     bool ok = true;
 
+    // NOLINTBEGIN(readability-magic-numbers)
     ok &= write_wav("test_pcm_16bit_mono_16000hz.wav", test_data::pcm_16bit_mono_16000hz,
                      test_data::pcm_16bit_mono_16000hz_len, 1000);
 
@@ -99,6 +100,7 @@ int main() {
 
     ok &= write_wav("test_pcm_fmt_size_18.wav", test_data::pcm_fmt_size_18,
                      test_data::pcm_fmt_size_18_len, 1000);
+    // NOLINTEND(readability-magic-numbers)
 
     if (!ok) {
         fprintf(stderr, "\nSome files failed to write!\n");
