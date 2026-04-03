@@ -1,6 +1,7 @@
 # microWAV - Streaming WAV Decoder
 
 [![CI](https://github.com/esphome-libs/micro-wav/actions/workflows/ci.yml/badge.svg)](https://github.com/esphome-libs/micro-wav/actions/workflows/ci.yml)
+[![Component Registry](https://components.espressif.com/components/esphome/micro-wav/badge.svg)](https://components.espressif.com/components/esphome/micro-wav)
 
 Streaming WAV parser and decoder for embedded devices. Extracts audio from WAV containers byte-by-byte with a 4-byte internal accumulator. No external buffering required.
 
@@ -21,8 +22,7 @@ Streaming WAV parser and decoder for embedded devices. Extracts audio from WAV c
 
 ```yaml
 dependencies:
-  micro-wav:
-    git: https://github.com/esphome-libs/micro-wav.git
+  esphome/micro-wav: "~0.1.0"
 ```
 
 ### PlatformIO
