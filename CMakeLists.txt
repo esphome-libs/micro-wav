@@ -56,7 +56,7 @@ if(ESP_IDF_BUILD)
 # ==============================================================================
 
 else()
-    project(micro_wav VERSION 0.1.0 LANGUAGES CXX)
+    project(micro_wav VERSION 0.1.1 LANGUAGES CXX)
 
     # Host build options
     option(ENABLE_WERROR "Treat warnings as errors" OFF)

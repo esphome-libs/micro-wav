@@ -1,6 +1,6 @@
 {
   "name": "micro-wav",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Streaming WAV decoder optimized for embedded devices",
   "keywords": ["wav", "audio", "decoder", "esp32", "embedded", "streaming"],
   "license": "Apache-2.0",
