@@ -2,13 +2,13 @@
 
 [![CI](https://github.com/esphome-libs/micro-wav/actions/workflows/ci.yml/badge.svg)](https://github.com/esphome-libs/micro-wav/actions/workflows/ci.yml)
 
-Streaming WAV decoder for embedded devices. Decodes WAV audio to PCM byte-by-byte with a 4-byte internal accumulator. No external buffering required.
+Streaming WAV parser and decoder for embedded devices. Extracts audio from WAV containers byte-by-byte with a 4-byte internal accumulator. No external buffering required.
 
 [![A project from the Open Home Foundation](https://www.openhomefoundation.org/badges/ohf-project.png)](https://www.openhomefoundation.org/)
 
 ## Features
 
-- **Wide format support**: Decodes PCM (8/16/24/32-bit), G.711 A-law/mu-law, and IEEE float 32-bit
+- **Wide format support**: PCM (8/16/24/32-bit), G.711 A-law/mu-law, and IEEE float 32-bit
 - **Byte-by-byte streaming**: Feed data in any chunk size
 - **Single API**: One `decode()` call for both header parsing and audio decoding
 - **Chunk-aware**: Automatically skips unknown chunks (LIST, INFO, etc.)
