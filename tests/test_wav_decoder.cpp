@@ -645,7 +645,7 @@ static bool test_incomplete_data() {
 static bool test_data_chunk_size_zero_streams() {
     // Hand-crafted minimal PCM 16-bit mono 16 kHz WAV with data chunk size = 0
     // and three PCM samples (0, +32767, -32768) appended after the header.
-    static constexpr uint8_t kSentinelWav[] = {
+    static constexpr uint8_t SENTINEL_WAV[] = {
         // RIFF header
         'R', 'I', 'F', 'F',
         0x00, 0x00, 0x00, 0x00,  // RIFF size: also 0; should not affect decoder
@@ -667,22 +667,24 @@ static bool test_data_chunk_size_zero_streams() {
         0xFF, 0x7F,
         0x00, 0x80,
     };
-    static constexpr size_t kSentinelWavLen = sizeof(kSentinelWav);
-    static constexpr size_t kHeaderLen = 44;
-    static constexpr size_t kPcmBytes = kSentinelWavLen - kHeaderLen;
+    static constexpr size_t SENTINEL_WAV_LEN = sizeof(SENTINEL_WAV);
+    static constexpr size_t HEADER_LEN = 44;
+    static constexpr size_t PCM_BYTES = SENTINEL_WAV_LEN - HEADER_LEN;
 
     WAVDecoder decoder;
     size_t pos = 0;
 
     // Header phase: feed bytes until HEADER_READY
     WAVDecoderResult result = WAV_DECODER_NEED_MORE_DATA;
-    while (pos < kSentinelWavLen) {
+    while (pos < SENTINEL_WAV_LEN) {
         size_t consumed = 0;
         size_t decoded = 0;
-        result = decoder.decode(kSentinelWav + pos, kSentinelWavLen - pos, nullptr, 0, consumed,
+        result = decoder.decode(SENTINEL_WAV + pos, SENTINEL_WAV_LEN - pos, nullptr, 0, consumed,
                                 decoded);
         pos += consumed;
-        if (result == WAV_DECODER_HEADER_READY) break;
+        if (result == WAV_DECODER_HEADER_READY) {
+            break;
+        }
         CHECK(result == WAV_DECODER_NEED_MORE_DATA, "header phase result");
     }
     CHECK(result == WAV_DECODER_HEADER_READY, "header ready reached");
@@ -692,17 +694,19 @@ static bool test_data_chunk_size_zero_streams() {
           "sentinel zero normalized to UINT32_MAX");
 
     // Audio phase: decode the trailing PCM samples
-    uint8_t output[kPcmBytes];
+    uint8_t output[PCM_BYTES];
     size_t total_decoded = 0;
-    while (pos < kSentinelWavLen) {
+    while (pos < SENTINEL_WAV_LEN) {
         size_t consumed = 0;
         size_t decoded = 0;
-        result = decoder.decode(kSentinelWav + pos, kSentinelWavLen - pos,
+        result = decoder.decode(SENTINEL_WAV + pos, SENTINEL_WAV_LEN - pos,
                                 output + total_decoded * 2, sizeof(output) - total_decoded * 2,
                                 consumed, decoded);
         pos += consumed;
         total_decoded += decoded;
-        if (result != WAV_DECODER_SUCCESS) break;
+        if (result != WAV_DECODER_SUCCESS) {
+            break;
+        }
     }
     CHECK(total_decoded == 3, "all three PCM samples decoded (would be 0 if bug present)");
     CHECK(read_le16(output + 0) == 0, "sample 0 = 0");
