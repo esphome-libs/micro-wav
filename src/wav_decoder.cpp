@@ -463,7 +463,12 @@ WAVDecoderResult WAVDecoder::process_field() {
                     this->buf_needed_ = 2;
                     break;
                 case PendingChunk::DATA:
-                    this->data_chunk_size_ = this->current_chunk_size_;
+                    // A data chunk size of 0 is a streaming sentinel meaning "unknown /
+                    // unlimited length" used by live HTTP WAV sources, some TTS engines, etc.
+                    // Map it to UINT32_MAX so the decoder reads until the caller stops
+                    // supplying input, matching the existing UINT32_MAX behavior.
+                    this->data_chunk_size_ =
+                        (this->current_chunk_size_ == 0) ? UINT32_MAX : this->current_chunk_size_;
                     this->state_ = State::IN_DATA;
                     return WAV_DECODER_HEADER_READY;
                 case PendingChunk::UNKNOWN:

@@ -168,6 +168,23 @@ public:
     }
 
     /// @brief Get the size of the data chunk in bytes
+    ///
+    /// @note The WAV spec normally treats a data chunk size of 0 as an empty
+    ///   data section, but some live HTTP WAV sources and TTS engines emit
+    ///   size 0 as a "streaming/unknown length" sentinel. This decoder
+    ///   normalizes a header-reported size of 0 to UINT32_MAX so the data
+    ///   section is treated as unbounded; callers comparing against
+    ///   UINT32_MAX can detect the unknown-length case.
+    ///
+    /// @note Behavioral consequence: in the sentinel-zero case the decoder
+    ///   will never return WAV_DECODER_END_OF_STREAM from input exhaustion
+    ///   alone — it keeps returning WAV_DECODER_NEED_MORE_DATA until the
+    ///   caller stops feeding it. Since decode() is pull-driven, the caller
+    ///   already controls termination by ceasing to call it; the tradeoff is
+    ///   that a genuinely empty WAV (size 0 with no trailing bytes) is
+    ///   indistinguishable from an open-ended stream from the decoder's
+    ///   return code alone.
+    ///
     /// @return Data chunk size
     uint32_t get_data_chunk_size() const {
         return this->data_chunk_size_;
