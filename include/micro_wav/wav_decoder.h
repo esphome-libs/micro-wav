@@ -168,6 +168,12 @@ public:
     }
 
     /// @brief Get the size of the data chunk in bytes
+    ///
+    /// @note A header-reported size of 0 (the streaming sentinel used by some
+    ///   live HTTP WAV sources) is normalized to UINT32_MAX so the decoder treats
+    ///   the data section as unbounded; callers comparing against UINT32_MAX can
+    ///   detect the unknown-length case.
+    ///
     /// @return Data chunk size
     uint32_t get_data_chunk_size() const {
         return this->data_chunk_size_;

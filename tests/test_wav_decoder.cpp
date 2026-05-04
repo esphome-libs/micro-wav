@@ -631,6 +631,89 @@ static bool test_incomplete_data() {
 }
 
 // ============================================================================
+// Streaming-sentinel test: data chunk size of 0 should be treated as unknown
+// length (read until input runs out), not as immediate end-of-stream.
+// ============================================================================
+
+static bool test_data_chunk_size_zero_streams() {
+    // Hand-crafted minimal PCM 16-bit mono 16 kHz WAV with data chunk size = 0
+    // and three PCM samples (0, +32767, -32768) appended after the header.
+    static constexpr uint8_t kSentinelWav[] = {
+        // RIFF header
+        'R', 'I', 'F', 'F',
+        0x00, 0x00, 0x00, 0x00,  // RIFF size: also 0; should not affect decoder
+        'W', 'A', 'V', 'E',
+        // fmt chunk
+        'f', 'm', 't', ' ',
+        0x10, 0x00, 0x00, 0x00,  // fmt size = 16
+        0x01, 0x00,              // audio format = 1 (PCM)
+        0x01, 0x00,              // channels = 1
+        0x80, 0x3E, 0x00, 0x00,  // sample rate = 16000
+        0x00, 0x7D, 0x00, 0x00,  // byte rate = 32000
+        0x02, 0x00,              // block align = 2
+        0x10, 0x00,              // bits per sample = 16
+        // data chunk header with sentinel size 0
+        'd', 'a', 't', 'a',
+        0x00, 0x00, 0x00, 0x00,  // data chunk size = 0 (streaming sentinel)
+        // Three 16-bit LE PCM samples: 0, +32767, -32768
+        0x00, 0x00,
+        0xFF, 0x7F,
+        0x00, 0x80,
+    };
+    static constexpr size_t kSentinelWavLen = sizeof(kSentinelWav);
+    static constexpr size_t kHeaderLen = 44;
+    static constexpr size_t kPcmBytes = kSentinelWavLen - kHeaderLen;
+
+    WAVDecoder decoder;
+    size_t pos = 0;
+
+    // Header phase: feed bytes until HEADER_READY
+    WAVDecoderResult result = WAV_DECODER_NEED_MORE_DATA;
+    while (pos < kSentinelWavLen) {
+        size_t consumed = 0;
+        size_t decoded = 0;
+        result = decoder.decode(kSentinelWav + pos, kSentinelWavLen - pos, nullptr, 0, consumed,
+                                decoded);
+        pos += consumed;
+        if (result == WAV_DECODER_HEADER_READY) break;
+        CHECK(result == WAV_DECODER_NEED_MORE_DATA, "header phase result");
+    }
+    CHECK(result == WAV_DECODER_HEADER_READY, "header ready reached");
+    // Sentinel zero is normalized to UINT32_MAX so the decoder treats the data
+    // section as unbounded instead of immediately ending.
+    CHECK(decoder.get_data_chunk_size() == UINT32_MAX,
+          "sentinel zero normalized to UINT32_MAX");
+
+    // Audio phase: decode the trailing PCM samples
+    uint8_t output[kPcmBytes];
+    size_t total_decoded = 0;
+    while (pos < kSentinelWavLen) {
+        size_t consumed = 0;
+        size_t decoded = 0;
+        result = decoder.decode(kSentinelWav + pos, kSentinelWavLen - pos,
+                                output + total_decoded * 2, sizeof(output) - total_decoded * 2,
+                                consumed, decoded);
+        pos += consumed;
+        total_decoded += decoded;
+        if (result != WAV_DECODER_SUCCESS) break;
+    }
+    CHECK(total_decoded == 3, "all three PCM samples decoded (would be 0 if bug present)");
+    CHECK(read_le16(output + 0) == 0, "sample 0 = 0");
+    CHECK(read_le16(output + 2) == 32767, "sample 1 = +32767");
+    CHECK(read_le16(output + 4) == -32768, "sample 2 = -32768");
+
+    // With sentinel-zero, decoder must not signal end-of-stream at input exhaustion;
+    // it should keep asking for more data so the caller can supply more or close.
+    size_t consumed = 0;
+    size_t decoded = 0;
+    uint8_t dummy[2];
+    result = decoder.decode(nullptr, 0, dummy, sizeof(dummy), consumed, decoded);
+    CHECK(result == WAV_DECODER_NEED_MORE_DATA,
+          "sentinel-zero stream stays open after input exhausted");
+    return true;
+}
+
+// ============================================================================
 // main
 // ============================================================================
 
@@ -673,6 +756,7 @@ int main() {
     printf("\n=== Other tests ===\n");
     RUN_TEST(test_reset);
     RUN_TEST(test_incomplete_data);
+    RUN_TEST(test_data_chunk_size_zero_streams);
 
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return tests_passed == tests_run ? EXIT_SUCCESS : EXIT_FAILURE;
