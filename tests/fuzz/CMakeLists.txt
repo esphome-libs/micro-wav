@@ -13,6 +13,17 @@ if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     message(FATAL_ERROR "Fuzzing requires Clang. Set CMAKE_CXX_COMPILER to clang++.")
 endif()
 
+# AppleClang satisfies the MATCHES "Clang" check above but ships without the
+# libFuzzer runtime, so a libFuzzer build only fails later at link with a
+# confusing error. Fail early with guidance. The standalone build
+# (-DFUZZ_USE_LIBFUZZER=OFF) needs only ASan/UBSan and works under AppleClang.
+if(FUZZ_USE_LIBFUZZER AND CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    message(FATAL_ERROR
+        "AppleClang has no libFuzzer runtime. Point CMAKE_CXX_COMPILER at Homebrew "
+        "LLVM (e.g. $(brew --prefix llvm)/bin/clang++), or pass "
+        "-DFUZZ_USE_LIBFUZZER=OFF for the standalone harness.")
+endif()
+
 # ASan + UBSan, all checks on. The WAV decoder uses only unsigned shifts, bounded
 # integer math, and clamped float->int conversion, so it is UBSan-clean and needs
 # no suppressions (contrast the Vorbis fork, whose fixed-point DSP relies on

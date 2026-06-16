@@ -144,8 +144,10 @@ static void run_decode_pass(WAVDecoder& decoder, const std::vector<uint8_t>& pay
                 std::abort();
             }
             // The core memory-safety bound: a single decode() must never write
-            // more sample bytes than the output buffer holds.
-            if (decoded * bps > out_size) {
+            // more sample bytes than the output buffer holds. Written in the
+            // division form (bps >= 1, checked above) so a corrupt `decoded` from
+            // a decoder bug can't overflow the product and slip past the check.
+            if (decoded > out_size / bps) {
                 std::abort();
             }
         }
@@ -460,7 +462,11 @@ int main(int argc, char** argv) {
         }
         // Output buffer too small for one sample.
         decoder.decode(w.data() + consumed, w.size() - consumed, &one_byte, 0, consumed, decoded);
-        // Null input with a non-zero length: invalid-input guard.
+        // Null input with a non-zero length: invalid-input guard. decode() returns
+        // early here without writing bytes_consumed, so reset first rather than
+        // carry a stale value.
+        consumed = 0;
+        decoded = 0;
         decoder.decode(nullptr, 4, &one_byte, sizeof(one_byte), consumed, decoded);
     }
 
