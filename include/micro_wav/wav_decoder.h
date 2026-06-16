@@ -120,7 +120,10 @@ public:
     /// @param output Pointer to output buffer for decoded PCM samples
     /// @param output_size_bytes Size of the output buffer in bytes
     /// @param bytes_consumed [out] Number of input bytes consumed by this call
-    /// @param samples_decoded [out] Number of samples decoded (per channel)
+    /// @param samples_decoded [out] Number of samples written to the output buffer this call.
+    ///        This is the total count of interleaved samples across all channels
+    ///        (i.e. frames * channels), not a per-channel frame count. Each output sample
+    ///        occupies get_bytes_per_output_sample() bytes.
     /// @return WAV_DECODER_HEADER_READY when header is complete (accessors now valid)
     ///         WAV_DECODER_SUCCESS when audio samples were decoded
     ///         WAV_DECODER_NEED_MORE_DATA when more input is needed
