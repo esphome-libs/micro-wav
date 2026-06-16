@@ -2,3 +2,18 @@ build/
 .cache/
 .pio/
 compile_commands.json
+
+# Fuzzer outputs (tests/fuzz)
+tests/fuzz/build-libfuzzer/
+tests/fuzz/build-standalone/
+tests/fuzz/build-cov/
+tests/fuzz/seeds_wav/
+tests/fuzz/corpus_wav/
+tests/fuzz/cov-html/
+tests/fuzz/cov.profraw
+tests/fuzz/cov.profdata
+tests/fuzz/crash-*
+tests/fuzz/leak-*
+tests/fuzz/timeout-*
+tests/fuzz/oom-*
+crash-*

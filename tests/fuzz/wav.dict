@@ -1,0 +1,71 @@
+# libFuzzer dictionary for WAV fuzzing.
+# Format: one token per line, quoted C-escaped string.
+#
+# Tokens steer libFuzzer toward the structural keywords and field values the
+# header parser branches on (chunk tags, format tags, sample rates, bit depths,
+# fmt-chunk sizes, and the EXTENSIBLE SubFormat GUID).
+
+# RIFF container tags
+"RIFF"
+"WAVE"
+
+# Chunk tags (fmt/data drive decoding; the rest exercise the skip-unknown path)
+"fmt "
+"data"
+"LIST"
+"fact"
+"JUNK"
+"bext"
+"cue "
+"INFO"
+
+# Audio format tags (little-endian u16, WAV wFormatTag field)
+# PCM 0x0001 / IEEE float 0x0003 / A-law 0x0006 / mu-law 0x0007 / EXTENSIBLE 0xFFFE
+"\x01\x00"
+"\x03\x00"
+"\x06\x00"
+"\x07\x00"
+"\xFE\xFF"
+
+# Common channel counts (u16 LE)
+"\x01\x00"
+"\x02\x00"
+"\x06\x00"
+"\x08\x00"
+
+# Common sample rates (little-endian u32)
+# 8000
+"\x40\x1F\x00\x00"
+# 16000
+"\x80\x3E\x00\x00"
+# 22050
+"\x22\x56\x00\x00"
+# 24000
+"\xC0\x5D\x00\x00"
+# 32000
+"\x00\x7D\x00\x00"
+# 44100
+"\x44\xAC\x00\x00"
+# 48000
+"\x80\xBB\x00\x00"
+# 96000
+"\x00\x77\x01\x00"
+
+# Bits per sample (u16 LE): 8 / 16 / 24 / 32
+"\x08\x00"
+"\x10\x00"
+"\x18\x00"
+"\x20\x00"
+
+# fmt chunk sizes (u32 LE): 16 standard, 18 (cbSize=0), 40 EXTENSIBLE
+"\x10\x00\x00\x00"
+"\x12\x00\x00\x00"
+"\x28\x00\x00\x00"
+
+# Data chunk size sentinels (u32 LE): 0 (streaming/unknown) and 0xFFFFFFFF
+"\x00\x00\x00\x00"
+"\xFF\xFF\xFF\xFF"
+
+# KSDATAFORMAT_SUBTYPE_PCM GUID (the EXTENSIBLE SubFormat field; first two bytes
+# are the resolved format tag). The full 16-byte GUID seeds the extensible path.
+"\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71"
