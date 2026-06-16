@@ -106,6 +106,7 @@ while (size_t len = read_chunk(data, sizeof(data))) {
 | `WAV_DECODER_END_OF_STREAM` | All data chunk bytes consumed |
 | `WAV_DECODER_NEED_MORE_DATA` | More bytes needed; call `decode()` again with additional data |
 | `WAV_DECODER_WARNING_OUTPUT_TOO_SMALL` | Output buffer is null or too small for one sample |
+| `WAV_DECODER_WARNING_INVALID_INPUT` | Input pointer is null but input length is non-zero |
 | `WAV_DECODER_ERROR_UNSUPPORTED` | Audio format not supported; e.g., 64-bit float, unknown codec |
 | `WAV_DECODER_ERROR_FAILED` | Generic decode failure; e.g., malformed chunk |
 | `WAV_DECODER_ERROR_NO_WAVE` | RIFF container found but missing WAVE identifier |
