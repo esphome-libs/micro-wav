@@ -75,6 +75,19 @@ static constexpr size_t MAX_CONTROL_BYTES = 128;
 // any over-write immediately. Asserts the Tier 1 oracle on every decode.
 // Factored out so it can run twice across a reset() to exercise the re-stream
 // path that a single pass misses.
+
+// Map a control byte to a buffer size. Bytes below CTRL_FINE_MAX map 1:1 to small
+// sizes (1..32) so the fuzzer can split individual header fields and 24/32-bit
+// samples across calls, forcing the partial-field/partial-sample accumulator;
+// higher bytes scale by CTRL_BULK_STEP to bulk sizes (up to ~8 KiB) so the memcpy
+// fast path and large output buffers also run.
+static constexpr size_t CTRL_FINE_MAX = 32;
+static constexpr size_t CTRL_BULK_STEP = 36;
+static size_t ctrl_to_size(uint8_t b) {
+    const size_t v = b;
+    return v < CTRL_FINE_MAX ? v + 1 : (v - (CTRL_FINE_MAX - 1)) * CTRL_BULK_STEP;
+}
+
 static void run_decode_pass(WAVDecoder& decoder, const std::vector<uint8_t>& payload,
                             const std::vector<uint8_t>& ctrl) {
     size_t offset = 0;
@@ -91,22 +104,22 @@ static void run_decode_pass(WAVDecoder& decoder, const std::vector<uint8_t>& pay
     while (offset < payload.size() && iterations < max_iterations) {
         ++iterations;
 
-        // Derive an input chunk size from the next control byte: 1..8161. Spans
-        // values smaller than a single 24/32-bit sample (forcing partial-sample
-        // buffering) up through multi-KiB bulk runs.
+        // Derive an input chunk size from the next control byte (1..~8 KiB). Small
+        // chunks split header fields and 24/32-bit samples across calls, forcing
+        // the partial accumulator; large chunks drive the bulk decode path.
         const uint8_t cs_byte = ctrl[ctrl_idx++ % ctrl.size()];
-        size_t chunk_size = 1 + static_cast<size_t>(cs_byte) * 32;
+        size_t chunk_size = ctrl_to_size(cs_byte);
         if (chunk_size > payload.size() - offset) {
             chunk_size = payload.size() - offset;
         }
 
-        // Derive an output buffer size from the next control byte: 1..8161, but
-        // never below one full output sample once the header is known, so the
-        // decode always makes forward progress (the null/too-small guard is
-        // covered separately in the standalone torture battery). Allocated
-        // exactly so an over-write lands in ASan's red zone.
+        // Derive an output buffer size from the next control byte, but never below
+        // one full output sample once the header is known, so the decode always
+        // makes forward progress (the null/too-small guard is covered separately in
+        // the standalone torture battery). Allocated exactly so an over-write lands
+        // in ASan's red zone.
         const uint8_t os_byte = ctrl[ctrl_idx++ % ctrl.size()];
-        size_t out_size = 1 + static_cast<size_t>(os_byte) * 32;
+        size_t out_size = ctrl_to_size(os_byte);
         const size_t min_out =
             decoder.is_header_ready() ? decoder.get_bytes_per_output_sample() : 1;
         if (out_size < min_out) {
