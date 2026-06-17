@@ -104,17 +104,74 @@ ffmpeg -hide_banner -loglevel error -y -f lavfi \
 # macOS's stock bash 3.2 (whose printf lacks \xHH).
 emit_byte() { printf "\\$(printf '%03o' "$1")"; }
 
-# Append a config tail to a file: 128 neutral control bytes then the cfg byte.
-# 128 control bytes == the harness MAX_CONTROL_BYTES, so every control byte comes
-# from the pad and none is peeled off the real stream.
+# Emit little-endian integers as raw bytes.
+emit_u16() { emit_byte $(( $1 & 255 )); emit_byte $(( ($1 >> 8) & 255 )); }
+emit_u32() {
+    emit_byte $(( $1 & 255 )); emit_byte $(( ($1 >> 8) & 255 ))
+    emit_byte $(( ($1 >> 16) & 255 )); emit_byte $(( ($1 >> 24) & 255 ))
+}
+
+# Build a minimal PCM-family WAV from scratch (for cases ffmpeg won't emit, e.g.
+# the data-chunk-size-0 streaming sentinel).
+#   $1 out  $2 fmt_tag  $3 channels  $4 rate  $5 bits  $6 data_size_field  $7 data_bytes
+build_wav() {
+    local out=$1 fmt=$2 ch=$3 rate=$4 bits=$5 dsz=$6 nbytes=$7 i
+    local ba=$(( ch * (bits / 8) )); [ "$ba" -lt 1 ] && ba=1
+    {
+        printf 'RIFF'; emit_u32 $(( 36 + nbytes )); printf 'WAVE'
+        printf 'fmt '; emit_u32 16
+        emit_u16 "$fmt"; emit_u16 "$ch"; emit_u32 "$rate"
+        emit_u32 $(( rate * ba )); emit_u16 "$ba"; emit_u16 "$bits"
+        printf 'data'; emit_u32 "$dsz"
+        for ((i=0;i<nbytes;i++)); do emit_byte $(( (i * 37) & 255 )); done
+    } > "$out"
+}
+
+# Append a config tail to a file: 128 control bytes then the cfg byte. 128 control
+# bytes == the harness MAX_CONTROL_BYTES, so every control byte comes from the pad
+# and none is peeled off the real stream. The bytes are a decorrelated sequence
+# rather than a constant or a smooth ramp: the harness reads chunk size and output
+# size from consecutive control bytes, so neighbouring values must differ widely
+# for the "small input chunk + large output buffer" combo to occur. That combo is
+# what makes input the limiter and leaves a trailing partial sample, exercising
+# the partial-sample accumulator (decode() Steps 1 and 3) in static replay; other
+# combos cover the output-limited drain and the bulk paths.
 #   $1 file  $2 cfg
 append_config_tail() {
     local f=$1 cfg=$2 i
     {
-        for ((i=0;i<128;i++)); do emit_byte 32; done  # ~1 KiB chunks/buffers
+        for ((i=0;i<128;i++)); do emit_byte $(( (i * 73 + 17) % 256 )); done
         emit_byte "$cfg"
     } >> "$f"
 }
+
+# Streaming sentinel: a data chunk size of 0 means "unknown / unbounded length"
+# (live HTTP WAV sources, some TTS engines). The decoder maps it to UINT32_MAX and
+# reads until input stops. ffmpeg never emits this, so craft it directly.
+build_wav seeds_wav/pcm_s16_datasize0.wav 1 1 16000 16 0 96
+
+# Truncated final sample: a 24-bit (3-byte) stream whose data chunk size is not a
+# multiple of the sample size, so the last sample can never complete. Exercises the
+# "partial sample, data exhausted -> end of stream" path in decode() Step 1.
+build_wav seeds_wav/pcm_s24_truncated.wav 1 1 48000 24 10 10
+
+# IEEE float with out-of-range and non-finite samples so the float->int clamp and
+# NaN paths run; a normal tone stays within [-1, 1] and never trips them. Samples
+# (LE): 2.0, -2.0, +inf, -inf, NaN, 0.5, -0.5, 1.0.
+{
+    printf 'RIFF'; emit_u32 $(( 36 + 32 )); printf 'WAVE'
+    printf 'fmt '; emit_u32 16
+    emit_u16 3; emit_u16 1; emit_u32 48000; emit_u32 $(( 48000 * 4 )); emit_u16 4; emit_u16 32
+    printf 'data'; emit_u32 32
+    emit_byte 0; emit_byte 0; emit_byte 0; emit_byte 64    # 2.0
+    emit_byte 0; emit_byte 0; emit_byte 0; emit_byte 192   # -2.0
+    emit_byte 0; emit_byte 0; emit_byte 128; emit_byte 127 # +inf
+    emit_byte 0; emit_byte 0; emit_byte 128; emit_byte 255 # -inf
+    emit_byte 0; emit_byte 0; emit_byte 192; emit_byte 127 # NaN
+    emit_byte 0; emit_byte 0; emit_byte 0; emit_byte 63    # 0.5
+    emit_byte 0; emit_byte 0; emit_byte 0; emit_byte 191   # -0.5
+    emit_byte 0; emit_byte 0; emit_byte 128; emit_byte 63  # 1.0
+} > seeds_wav/float_clamp_nan.wav
 
 echo "[seeds] appending fuzzer config tails"
 
