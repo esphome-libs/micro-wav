@@ -4,10 +4,18 @@ on:
   release:
     types: [published]
 
+# Least-privilege default; jobs widen their own scope as needed below.
+permissions:
+  contents: read
+
 jobs:
   ci-gate:
     name: CI gate
     runs-on: ubuntu-latest
+    # Reads check-run conclusions via the API; no checkout, so contents is not
+    # needed, but checks:read is.
+    permissions:
+      checks: read
     steps:
       - name: Verify CI passed on release commit
         env:
@@ -63,7 +71,10 @@ jobs:
     needs: ci-gate
     runs-on: ubuntu-latest
     environment: espressif
+    # Job-level permissions replace the top-level default, so contents:read must
+    # be re-declared here for checkout alongside the OIDC token.
     permissions:
+      contents: read
       id-token: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

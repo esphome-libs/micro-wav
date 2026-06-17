@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main]
 
+# Least-privilege default: every job only reads the repo (checkout). No job
+# writes contents, issues, or PRs.
+permissions:
+  contents: read
+
 jobs:
   pre-commit:
     name: Pre-commit checks
