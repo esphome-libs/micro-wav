@@ -1,0 +1,7 @@
+menu "microWAV Decoder"
+
+    config MICRO_WAV_COMPONENT
+        bool
+        default y
+
+endmenu
