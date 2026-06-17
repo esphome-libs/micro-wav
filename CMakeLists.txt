@@ -61,6 +61,7 @@ else()
     # Host build options
     option(ENABLE_WERROR "Treat warnings as errors" OFF)
     option(ENABLE_TESTS "Build tests" OFF)
+    option(ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
     option(BUILD_TEST_WAV_WRITER "Build WAV file writer for sox validation" OFF)
 
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/host.cmake)
