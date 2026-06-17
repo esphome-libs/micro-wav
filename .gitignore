@@ -2,3 +2,26 @@ build/
 .cache/
 .pio/
 compile_commands.json
+
+# OS specific
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+log/
+
+# Fuzzer outputs (harness, scripts, dict, and README stay tracked)
+tests/fuzz/build-libfuzzer/
+tests/fuzz/build-standalone/
+tests/fuzz/build-cov/
+tests/fuzz/corpus_wav/
+tests/fuzz/seeds_wav/
+tests/fuzz/cov-html/
+tests/fuzz/cov.profraw
+tests/fuzz/cov.profdata
+crash-*
+leak-*
+timeout-*
+oom-*
