@@ -30,6 +30,21 @@ function(wav_configure_host TARGET SOURCE_DIR)
         $<$<BOOL:${ENABLE_WERROR}>:-Werror>
     )
 
+    # Optional AddressSanitizer + UndefinedBehaviorSanitizer for host test/debug
+    # builds. The WAV decoder is UBSan-clean (unsigned shifts, bounded integer
+    # math, clamped float->int), so all checks stay on with no suppressions.
+    # Sanitizers must instrument both compile and link, so apply to both.
+    if(ENABLE_SANITIZERS)
+        target_compile_options(${TARGET} PRIVATE
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer
+            -g
+        )
+        target_link_options(${TARGET} PRIVATE
+            -fsanitize=address,undefined
+        )
+    endif()
+
     # C++ standard: PUBLIC for libraries (propagates to consumers), PRIVATE for executables
     get_target_property(_target_type ${TARGET} TYPE)
     if(_target_type STREQUAL "EXECUTABLE")

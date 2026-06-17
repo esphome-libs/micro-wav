@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main]
 
+# Least-privilege default: every job only reads the repo (checkout). No job
+# writes contents, issues, or PRs.
+permissions:
+  contents: read
+
 jobs:
   pre-commit:
     name: Pre-commit checks
@@ -41,10 +46,45 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Configure CMake
-        run: cmake -B build -DENABLE_WERROR=ON -DENABLE_TESTS=ON
+        run: cmake -B build -DENABLE_SANITIZERS=ON -DENABLE_WERROR=ON
 
       - name: Build
         run: cmake --build build
 
-      - name: Test
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Configure unit tests with sanitizers
+        run: cmake -B build -DENABLE_SANITIZERS=ON -DENABLE_WERROR=ON -DENABLE_TESTS=ON
+
+      - name: Build unit tests
+        run: cmake --build build
+
+      - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
+
+  fuzz:
+    name: Fuzz build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+
+      # Standalone harness (no libFuzzer runtime needed) under ASan/UBSan.
+      # Guards against harness compile/link regressions and gives the tree a
+      # clang build; deep corpus fuzzing stays a local task (see tests/fuzz).
+      - name: Configure fuzz harness (standalone)
+        run: cmake -B tests/fuzz/build -DFUZZ_USE_LIBFUZZER=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ tests/fuzz
+
+      - name: Build fuzz harness
+        run: cmake --build tests/fuzz/build
+
+      - name: Run standalone torture battery
+        run: ./tests/fuzz/build/fuzz_wav_decode
