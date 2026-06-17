@@ -22,7 +22,7 @@ Streaming WAV parser and decoder for embedded devices. Extracts audio from WAV c
 
 ```yaml
 dependencies:
-  esphome/micro-wav: "~0.1.0"
+  esphome/micro-wav: "*"
 ```
 
 ### PlatformIO
@@ -123,6 +123,18 @@ while (size_t len = read_chunk(data, sizeof(data))) {
 | `WAV_FORMAT_ALAW` | A-law companded |
 | `WAV_FORMAT_MULAW` | mu-law companded |
 | `WAV_FORMAT_UNKNOWN` | Unrecognized format tag |
+
+## Testing
+
+The decoder is covered by a ctest suite (`tests/`) that runs hand-constructed WAV fixtures through `decode()` and checks the output against expected values: header parsing for PCM (8/16/24/32-bit), G.711 A-law/mu-law, IEEE float 32-bit, and `WAVE_FORMAT_EXTENSIBLE` headers; unknown-chunk skipping before and after the fmt chunk; error paths (missing RIFF, missing WAVE, undersized fmt chunk); decode accuracy per format; chunked streaming at adversarial chunk sizes (byte-by-byte through five bytes); reset and reuse; and the zero-length `data` chunk streaming sentinel.
+
+```bash
+cmake -B build -DENABLE_TESTS=ON -DENABLE_SANITIZERS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+Fixtures are hand-constructed WAV headers in `tests/wav_test_data.h`, validated against `sox`/`soxi`; rebuild the validation writer with `-DBUILD_TEST_WAV_WRITER=ON` to regenerate the files for re-checking. Add `-DENABLE_WERROR=ON` to the cmake command to treat warnings as errors (off by default). A libFuzzer harness lives in [tests/fuzz/](tests/fuzz/) and drives `decode()` with mutated WAV bytes under AddressSanitizer and UBSan, asserting structural invariants (bounded output writes, consistent reported geometry) on every call; see its README for build and run instructions.
 
 ## Known Limitations
 
