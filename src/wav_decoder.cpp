@@ -109,13 +109,18 @@ static int32_t decode_float_to_int32(const uint8_t* bytes) {
     if (f != f) {  // NOLINT(misc-redundant-expression)
         return 0;
     }
-    if (f > 1.0F) {
-        f = 1.0F;
+    // Scale by 2^31. It is exact as a float, so the multiply stays on the
+    // single-precision FPU (double is software-emulated on ESP32). The two
+    // checks below clamp the result to int32_t range, which also handles
+    // inputs outside [-1.0, 1.0] and +/-inf.
+    float scaled = f * 2147483648.0F;  // 2^31
+    if (scaled >= 2147483648.0F) {
+        return INT32_MAX;
     }
-    if (f < -1.0F) {
-        f = -1.0F;
+    if (scaled < -2147483648.0F) {
+        return INT32_MIN;
     }
-    return static_cast<int32_t>(static_cast<double>(f) * 2147483647.0);
+    return static_cast<int32_t>(scaled);
 }
 
 static void convert_sample(WAVAudioFormat fmt, uint8_t bytes_per_input, const uint8_t* src,

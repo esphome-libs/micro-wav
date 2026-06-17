@@ -414,8 +414,8 @@ static bool test_decode_float() {
     CHECK(total == 2, "2 samples decoded");
     CHECK(decoder.get_bits_per_sample() == 32, "output bps = 32");
     CHECK(read_le32(output + 0) == 0, "sample 0 = 0");
-    // 0.5 * 2147483647 = 1073741823.5, truncated to 1073741823
-    CHECK(read_le32(output + 4) == 1073741823, "sample 1 = 1073741823");
+    // 0.5 * 2^31 = 1073741824 (exact)
+    CHECK(read_le32(output + 4) == 1073741824, "sample 1 = 1073741824");
     return true;
 }
 
