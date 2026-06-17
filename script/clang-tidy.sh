@@ -39,9 +39,9 @@ if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     cmake -B "$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_TESTS=ON -DBUILD_TEST_WAV_WRITER=ON "$ROOT_DIR"
 fi
 
-# Find all source files, excluding build/ directories
+# Find all source files, excluding build directories (build, build-cov, etc.)
 SOURCES=$(find "$ROOT_DIR/src" "$ROOT_DIR/tests" \
-    -path '*/build' -prune -o \
+    -type d -name 'build*' -prune -o \
     \( -name '*.cpp' -o -name '*.c' \) -print 2>/dev/null || true)
 
 if [ -z "$SOURCES" ]; then
