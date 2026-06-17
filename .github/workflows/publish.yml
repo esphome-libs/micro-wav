@@ -23,11 +23,14 @@ jobs:
         run: |
           # Check that all expected CI checks passed on this commit.
           EXPECTED_CHECKS=("Pre-commit checks" "Static analysis" "Build" "Test" "Fuzz build")
+          # Coalesce a null conclusion (queued/in-progress) to "pending" so the
+          # failure message reads clearly rather than blank.
           CONCLUSIONS=$(gh api repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs \
-            --paginate --jq '.check_runs[] | .name + "=" + .conclusion')
+            --paginate --jq '.check_runs[] | .name + "=" + (.conclusion // "pending")')
 
           for check in "${EXPECTED_CHECKS[@]}"; do
-            matches=$(echo "$CONCLUSIONS" | grep "^${check}" || true)
+            # Anchor on "name=" so a check name can't match another by prefix.
+            matches=$(echo "$CONCLUSIONS" | grep "^${check}=" || true)
             if [ -z "$matches" ]; then
               echo "Required CI check not found: $check"
               exit 1
