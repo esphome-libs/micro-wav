@@ -78,6 +78,9 @@ static constexpr int MULAW_BIAS = 0x84;
 // Byte extraction
 static constexpr uint32_t BYTE_MASK = 0xFFU;
 
+// 8-bit PCM is stored unsigned (128 = silence); XOR with this flips it to signed.
+static constexpr uint8_t PCM8_SIGN_BIT = 0x80;
+
 static int16_t decode_alaw_sample(uint8_t a_val) {
     a_val ^= ALAW_XOR_MASK;
     uint8_t exponent = static_cast<uint8_t>((a_val >> 4) & G711_EXPONENT_MASK);
@@ -127,11 +130,10 @@ static void convert_sample(WAVAudioFormat fmt, uint8_t bytes_per_input, const ui
                            uint8_t* dst) {
     switch (fmt) {
         case WAV_FORMAT_PCM:
-            if (bytes_per_input == 1) {
-                dst[0] = src[0] ^ G711_SIGN_BIT;
-            } else {
-                memcpy(dst, src, bytes_per_input);
-            }
+            // PCM needs no conversion; copy the completed partial sample through.
+            // 8-bit PCM never reaches here: a 1-byte sample is atomic, so it is never
+            // buffered as partial. Its unsigned->signed conversion is done inline in decode().
+            memcpy(dst, src, bytes_per_input);
             break;
         case WAV_FORMAT_ALAW: {
             int16_t sample = decode_alaw_sample(src[0]);
@@ -313,11 +315,12 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
             this->data_bytes_remaining_ -= static_cast<uint32_t>(total_bytes);
             samples_decoded += count;
         } else if (count > 0 && fmt == WAV_FORMAT_PCM) {
-            // PCM 8-bit unsigned->signed: batch XOR loop without per-sample function call
+            // PCM 8-bit unsigned->signed: batch XOR loop without per-sample function call.
+            // This is the only place 8-bit PCM is converted; convert_sample() does not.
             const uint8_t* src = input + bytes_consumed;
             uint8_t* dst = output + samples_decoded * this->bytes_per_output_sample_;
             for (size_t i = 0; i < count; ++i) {
-                dst[i] = src[i] ^ G711_SIGN_BIT;
+                dst[i] = src[i] ^ PCM8_SIGN_BIT;
             }
             bytes_consumed += count;
             this->data_bytes_remaining_ -= static_cast<uint32_t>(count);

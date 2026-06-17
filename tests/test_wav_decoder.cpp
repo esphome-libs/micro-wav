@@ -477,6 +477,49 @@ static bool test_decode_streaming() {
     return true;
 }
 
+static bool test_decode_streaming_8bit() {
+    // Feed the PCM 8-bit file one byte at a time. 8-bit samples are atomic, so they are
+    // never buffered as partial; this covers the inline unsigned->signed conversion under
+    // byte-by-byte feeding.
+    WAVDecoder decoder;
+    const uint8_t* data = test_data::decode_pcm_8bit_mono;
+    size_t len = test_data::decode_pcm_8bit_mono_len;
+    size_t pos = 0;
+
+    // Header phase: feed byte by byte
+    WAVDecoderResult result = WAV_DECODER_NEED_MORE_DATA;
+    while (pos < len && result == WAV_DECODER_NEED_MORE_DATA) {
+        size_t consumed = 0;
+        size_t decoded = 0;
+        result = decoder.decode(data + pos, 1, nullptr, 0, consumed, decoded);
+        pos += consumed;
+    }
+    CHECK(result == WAV_DECODER_HEADER_READY, "header ready after streaming");
+    CHECK(decoder.get_bits_per_sample() == 8, "output bps = 8");
+
+    // Audio phase: feed byte by byte
+    uint8_t output[4];
+    size_t total = 0;
+    while (pos < len) {
+        size_t consumed = 0;
+        size_t decoded = 0;
+        result = decoder.decode(data + pos, 1, output + total, sizeof(output) - total, consumed,
+                                decoded);
+        pos += consumed;
+        total += decoded;
+        if (result == WAV_DECODER_END_OF_STREAM) {
+            break;
+        }
+    }
+    CHECK(total == 4, "4 samples decoded via streaming");
+    // 0x00 unsigned -> 0x80 signed, 0x80->0x00, 0xFF->0x7F, 0x40->0xC0
+    CHECK(output[0] == 0x80, "stream sample 0");
+    CHECK(output[1] == 0x00, "stream sample 1");
+    CHECK(output[2] == 0x7F, "stream sample 2");
+    CHECK(output[3] == 0xC0, "stream sample 3");
+    return true;
+}
+
 // ============================================================================
 // Streaming header tests: feed each valid header 1 byte at a time
 // ============================================================================
@@ -757,6 +800,7 @@ int main() {
     RUN_TEST(test_decode_float);
     RUN_TEST(test_decode_end_of_stream);
     RUN_TEST(test_decode_streaming);
+    RUN_TEST(test_decode_streaming_8bit);
 
     printf("\n=== Streaming header tests ===\n");
     RUN_TEST(test_streaming_byte_by_byte);
