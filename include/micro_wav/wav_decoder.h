@@ -159,6 +159,12 @@ public:
     }
 
     /// @brief Get the number of audio data bytes remaining to be decoded
+    ///
+    /// @note For unknown-length streams (a header-reported data chunk size of 0;
+    ///   see get_data_chunk_size()), the countdown is replenished to UINT32_MAX
+    ///   at the start of every decode() call, so it does not reflect a true
+    ///   remaining count and the stream never ends from this counter alone.
+    ///
     /// @return Remaining bytes in the data chunk
     uint32_t get_bytes_remaining() const {
         return this->data_bytes_remaining_;

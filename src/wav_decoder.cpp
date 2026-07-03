@@ -260,6 +260,13 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
     // Audio decoding phase
     bytes_consumed = 0;
 
+    // Unknown-length stream (see get_data_chunk_size()): replenish the countdown
+    // every call so it never reaches zero, which would falsely signal
+    // END_OF_STREAM after UINT32_MAX consumed bytes (~4 GiB).
+    if (this->data_chunk_size_ == UINT32_MAX) {
+        this->data_bytes_remaining_ = UINT32_MAX;
+    }
+
     // Null input with zero length: nothing to feed, return current status
     if (input == nullptr) {
         if (this->data_bytes_remaining_ == 0 && this->buf_len_ == 0) {
