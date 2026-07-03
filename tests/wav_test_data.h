@@ -463,7 +463,7 @@ static const size_t decode_alaw_mono_len = sizeof(decode_alaw_mono);
 
 // mu-law mono 8000 Hz, 4 samples
 // Input: [0x7F, 0xFF, 0x00, 0x80]
-// Decoded int16: [0, 0, +32124, -32124]
+// Decoded int16: [0, 0, -32124, +32124]
 static const uint8_t decode_mulaw_mono[] = {
     'R', 'I', 'F', 'F',
     0x28, 0x00, 0x00, 0x00,  // RIFF size = 40

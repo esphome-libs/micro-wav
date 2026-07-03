@@ -398,8 +398,8 @@ static bool test_decode_mulaw() {
     CHECK(decoder.get_bits_per_sample() == 16, "output bps = 16");
     CHECK(read_le16(output + 0) == 0, "sample 0 = 0");
     CHECK(read_le16(output + 2) == 0, "sample 1 = 0");
-    CHECK(read_le16(output + 4) == 32124, "sample 2 = +32124");
-    CHECK(read_le16(output + 6) == -32124, "sample 3 = -32124");
+    CHECK(read_le16(output + 4) == -32124, "sample 2 = -32124");
+    CHECK(read_le16(output + 6) == 32124, "sample 3 = +32124");
     return true;
 }
 

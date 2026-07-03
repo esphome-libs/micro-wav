@@ -101,7 +101,9 @@ static int16_t decode_mulaw_sample(uint8_t mu_val) {
     int magnitude = ((mantissa << 3) + MULAW_BIAS) << exponent;
     magnitude -= MULAW_BIAS;
     int16_t result = static_cast<int16_t>(magnitude);
-    return (mu_val & G711_SIGN_BIT) ? result : static_cast<int16_t>(-result);
+    // After the initial complement, a set sign bit means the original sample was
+    // negative, the opposite of A-law's convention after its XOR unmask.
+    return (mu_val & G711_SIGN_BIT) ? static_cast<int16_t>(-result) : result;
 }
 
 // NOTE: Assumes the host platform uses little-endian IEEE 754 floats.
