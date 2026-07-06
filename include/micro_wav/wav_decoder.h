@@ -22,6 +22,17 @@
 #include <cstddef>
 #include <cstdint>
 
+// Marks functions whose return value must not be ignored (the decoder reports
+// errors only through return codes). [[nodiscard]] needs C++17; the library
+// builds at C++11, so fall back to the GNU attribute there.
+#if defined(__cplusplus) && __cplusplus >= 201703L
+#define MICRO_WAV_NODISCARD [[nodiscard]]
+#elif defined(__GNUC__)
+#define MICRO_WAV_NODISCARD __attribute__((warn_unused_result))
+#else
+#define MICRO_WAV_NODISCARD
+#endif
+
 namespace micro_wav {
 
 // ============================================================================
@@ -129,6 +140,7 @@ public:
     ///         WAV_DECODER_NEED_MORE_DATA when more input is needed
     ///         WAV_DECODER_END_OF_STREAM when all audio data is consumed
     ///         Negative error code on failure
+    MICRO_WAV_NODISCARD
     WAVDecoderResult decode(const uint8_t* input, size_t input_len, uint8_t* output,
                             size_t output_size_bytes, size_t& bytes_consumed,
                             size_t& samples_decoded);
