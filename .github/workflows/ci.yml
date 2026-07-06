@@ -50,6 +50,21 @@ jobs:
           CLANG_TIDY: clang-tidy-18
         run: ./script/clang-tidy.sh
 
+  cppcheck:
+    name: Cppcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+        run: ./script/cppcheck.sh
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -118,6 +133,7 @@ jobs:
     needs:
       - pre-commit
       - lint
+      - cppcheck
       - build
       - test
       - fuzz
