@@ -38,7 +38,7 @@ cppcheck \
     -I include \
     -I src \
     -I tests \
-    src/wav_decoder.cpp \
+    src \
     tests
 
 echo "cppcheck passed"

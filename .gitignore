@@ -3,6 +3,9 @@ build/
 .pio/
 compile_commands.json
 
+# Local marker recording which internal conventions version is used for this project.
+.conventions-version
+
 # OS specific
 .DS_Store
 Thumbs.db
