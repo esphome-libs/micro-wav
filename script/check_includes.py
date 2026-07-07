@@ -262,7 +262,7 @@ def main():
 
     failures = 0
     errors = 0
-    with concurrent.futures.ThreadPoolExecutor(os.cpu_count()) as pool:
+    with concurrent.futures.ThreadPoolExecutor(os.cpu_count() or 1) as pool:
         results = pool.map(
             lambda job: (job, run_engine(binary, job[0], job[1])), jobs
         )
@@ -305,7 +305,7 @@ def main():
 
     if errors:
         print(f"\ncheck-includes: {errors} file(s) could not be analyzed "
-              "(missing stub symbol? see script/esp_stubs/README.md)")
+              "(missing stub symbol? see script/esp_stubs.py)")
     if failures:
         print(f"check-includes: {failures} failing check(s)")
     if errors or failures:
