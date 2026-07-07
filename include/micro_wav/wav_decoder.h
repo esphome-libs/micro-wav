@@ -61,6 +61,8 @@ enum WAVDecoderResult : int8_t {
 /// Values match the WAV spec's 16-bit wFormatTag field. WAVE_FORMAT_EXTENSIBLE (0xFFFE) is
 /// resolved to the underlying format via the SubFormat GUID; unrecognized tags map to
 /// WAV_FORMAT_UNKNOWN
+/// @note WAV_FORMAT_IEEE_FLOAT decoding assumes the host platform uses little-endian IEEE 754
+///   floats (true for ESP32, x86, and ARM; wrong on big-endian hosts).
 enum WAVAudioFormat : uint16_t {     // NOLINT(performance-enum-size): matches WAV spec's 16-bit
                                      // wFormatTag
     WAV_FORMAT_UNKNOWN = 0x0000,     // Unrecognized or unsupported format tag
@@ -199,7 +201,7 @@ public:
     ///
     /// @note Behavioral consequence: in the sentinel-zero case the decoder
     ///   will never return WAV_DECODER_END_OF_STREAM from input exhaustion
-    ///   alone — it keeps returning WAV_DECODER_NEED_MORE_DATA until the
+    ///   alone. It keeps returning WAV_DECODER_NEED_MORE_DATA until the
     ///   caller stops feeding it. Since decode() is pull-driven, the caller
     ///   already controls termination by ceasing to call it; the tradeoff is
     ///   that a genuinely empty WAV (size 0 with no trailing bytes) is
