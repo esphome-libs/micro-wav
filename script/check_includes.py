@@ -153,9 +153,13 @@ def ensure_compile_db():
     )
 
 
-def gather_files(dirs):
+def gather_files(dirs, prune=()):
+    """Collect checkable files under dirs. prune lists the other categories'
+    roots: a nested root (e.g. src/esp under src) belongs only to its own
+    category's walk."""
     exclude_res = [re.compile(p) for p in EXCLUDE_BASENAMES]
     exclude_dirs = {os.path.join(ROOT, d) for d in EXCLUDE_DIRS}
+    exclude_dirs |= {os.path.join(ROOT, d) for d in prune}
     files = []
     for d in dirs:
         top = os.path.join(ROOT, d)
@@ -251,9 +255,9 @@ def main():
     ensure_compile_db()
     materialize_stubs()
 
-    both = gather_files(CHECK_BOTH)
-    host_only = gather_files(CHECK_HOST_ONLY)
-    esp_only = gather_files(CHECK_ESP_ONLY)
+    both = gather_files(CHECK_BOTH, prune=CHECK_HOST_ONLY + CHECK_ESP_ONLY)
+    host_only = gather_files(CHECK_HOST_ONLY, prune=CHECK_ESP_ONLY)
+    esp_only = gather_files(CHECK_ESP_ONLY, prune=CHECK_HOST_ONLY)
 
     headers = [f for f in both + host_only + esp_only
                if os.path.splitext(f)[1] in HEADER_EXTS]
