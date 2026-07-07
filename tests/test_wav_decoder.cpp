@@ -15,6 +15,7 @@
 #include "micro_wav/wav_decoder.h"
 #include "wav_test_data.h"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -558,7 +559,7 @@ static bool test_streaming_byte_by_byte() {
         WAVDecoder decoder;
         WAVDecoderResult result = decode_header_chunked(decoder, tc.data, tc.len, 1);
         if (result != WAV_DECODER_HEADER_READY) {
-            fprintf(stderr, "  FAIL: streaming byte-by-byte %s: bad result %d\n", tc.name, result);
+            fprintf(stderr, "  FAIL: streaming byte-by-byte %s: bad result %d\n", tc.name, static_cast<int>(result));
             return false;
         }
         if (decoder.get_audio_format() != tc.expected_format ||
@@ -578,7 +579,7 @@ static bool test_streaming_two_bytes() {
         WAVDecoder decoder;
         WAVDecoderResult result = decode_header_chunked(decoder, tc.data, tc.len, 2);
         if (result != WAV_DECODER_HEADER_READY) {
-            fprintf(stderr, "  FAIL: streaming 2-byte %s: bad result %d\n", tc.name, result);
+            fprintf(stderr, "  FAIL: streaming 2-byte %s: bad result %d\n", tc.name, static_cast<int>(result));
             return false;
         }
         if (decoder.get_audio_format() != tc.expected_format ||
@@ -598,7 +599,7 @@ static bool test_streaming_three_bytes() {
         WAVDecoder decoder;
         WAVDecoderResult result = decode_header_chunked(decoder, tc.data, tc.len, 3);
         if (result != WAV_DECODER_HEADER_READY) {
-            fprintf(stderr, "  FAIL: streaming 3-byte %s: bad result %d\n", tc.name, result);
+            fprintf(stderr, "  FAIL: streaming 3-byte %s: bad result %d\n", tc.name, static_cast<int>(result));
             return false;
         }
         if (decoder.get_audio_format() != tc.expected_format ||
@@ -618,7 +619,7 @@ static bool test_streaming_five_bytes() {
         WAVDecoder decoder;
         WAVDecoderResult result = decode_header_chunked(decoder, tc.data, tc.len, 5);
         if (result != WAV_DECODER_HEADER_READY) {
-            fprintf(stderr, "  FAIL: streaming 5-byte %s: bad result %d\n", tc.name, result);
+            fprintf(stderr, "  FAIL: streaming 5-byte %s: bad result %d\n", tc.name, static_cast<int>(result));
             return false;
         }
         if (decoder.get_audio_format() != tc.expected_format ||

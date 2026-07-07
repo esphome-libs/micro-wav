@@ -286,9 +286,14 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
 
     WAVAudioFormat fmt = this->get_audio_format();
 
-    // Step 1: Complete any partial sample buffered from a previous call
+    // Step 1: Complete any partial sample buffered from a previous call.
+    // bytes_per_input_sample_ is validated to at most sizeof(buf_) when the
+    // header completes; the explicit sizeof bound keeps the accumulation
+    // overflow-free even if that state were ever corrupted (and makes the
+    // invariant visible to static analysis).
     if (this->buf_len_ > 0) {
-        while (this->buf_len_ < this->bytes_per_input_sample_ && bytes_consumed < input_len &&
+        while (this->buf_len_ < this->bytes_per_input_sample_ &&
+               this->buf_len_ < sizeof(this->buf_) && bytes_consumed < input_len &&
                this->data_bytes_remaining_ > 0) {
             this->buf_[this->buf_len_++] = input[bytes_consumed++];
             --this->data_bytes_remaining_;
@@ -351,7 +356,7 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
             output_size_bytes &&
         this->data_bytes_remaining_ > 0 && bytes_consumed < input_len) {
         while (bytes_consumed < input_len && this->buf_len_ < this->bytes_per_input_sample_ &&
-               this->data_bytes_remaining_ > 0) {
+               this->buf_len_ < sizeof(this->buf_) && this->data_bytes_remaining_ > 0) {
             this->buf_[this->buf_len_++] = input[bytes_consumed++];
             --this->data_bytes_remaining_;
         }
@@ -411,8 +416,10 @@ WAVDecoderResult WAVDecoder::parse(const uint8_t* input, size_t input_len, size_
             continue;
         }
 
-        // Accumulate phase
-        while (this->buf_len_ < this->buf_needed_ && bytes_consumed < input_len) {
+        // Accumulate phase (buf_needed_ is 2 or 4, never above sizeof(buf_);
+        // the explicit bound keeps this overflow-free regardless)
+        while (this->buf_len_ < this->buf_needed_ && this->buf_len_ < sizeof(this->buf_) &&
+               bytes_consumed < input_len) {
             this->buf_[this->buf_len_++] = input[bytes_consumed++];
         }
         if (this->buf_len_ < this->buf_needed_) {

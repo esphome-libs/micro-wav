@@ -21,6 +21,7 @@
 
 #include "wav_test_data.h"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
