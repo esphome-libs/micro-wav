@@ -24,26 +24,25 @@ using namespace micro_wav;
 static int tests_run = 0;
 static int tests_passed = 0;
 
-#define CHECK(cond, msg)                                                              \
-    do {                                                                              \
-        const bool check_ok_ = (cond);                                                \
-        if (!check_ok_) {                                                             \
-            fprintf(stderr, "  FAIL: %s (line %d)\n    condition: %s\n", msg,         \
-                    __LINE__, #cond);                                                 \
-            return false;                                                             \
-        }                                                                             \
+#define CHECK(cond, msg)                                                                        \
+    do {                                                                                        \
+        const bool check_ok_ = (cond);                                                          \
+        if (!check_ok_) {                                                                       \
+            fprintf(stderr, "  FAIL: %s (line %d)\n    condition: %s\n", msg, __LINE__, #cond); \
+            return false;                                                                       \
+        }                                                                                       \
     } while (0)
 
-#define RUN_TEST(fn)                                                                  \
-    do {                                                                              \
-        tests_run++;                                                                  \
-        printf("  %-60s", #fn);                                                       \
-        if (fn()) {                                                                   \
-            tests_passed++;                                                           \
-            printf("PASS\n");                                                         \
-        } else {                                                                      \
-            printf("FAIL\n");                                                         \
-        }                                                                             \
+#define RUN_TEST(fn)            \
+    do {                        \
+        tests_run++;            \
+        printf("  %-60s", #fn); \
+        if (fn()) {             \
+            tests_passed++;     \
+            printf("PASS\n");   \
+        } else {                \
+            printf("FAIL\n");   \
+        }                       \
     } while (0)
 
 // ---------------------------------------------------------------------------
@@ -108,8 +107,7 @@ static WAVDecoderResult decode_all(WAVDecoder& decoder, const uint8_t* data, siz
         size_t consumed = 0;
         size_t decoded = 0;
         last_result = decoder.decode(
-            data + pos, len - pos,
-            output + total_samples * decoder.get_bits_per_sample() / 8,
+            data + pos, len - pos, output + total_samples * decoder.get_bits_per_sample() / 8,
             output_size - total_samples * decoder.get_bits_per_sample() / 8, consumed, decoded);
         pos += consumed;
         total_samples += decoded;
@@ -227,9 +225,8 @@ static bool test_unknown_chunk_after_fmt() {
 
 static bool test_extensible_pcm_24bit() {
     WAVDecoder decoder;
-    WAVDecoderResult result =
-        decode_header(decoder, test_data::extensible_pcm_24bit_stereo_96000hz,
-                      test_data::extensible_pcm_24bit_stereo_96000hz_len);
+    WAVDecoderResult result = decode_header(decoder, test_data::extensible_pcm_24bit_stereo_96000hz,
+                                            test_data::extensible_pcm_24bit_stereo_96000hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
     CHECK(decoder.get_audio_format() == WAV_FORMAT_PCM, "audio format (from subformat)");
     CHECK(decoder.get_channels() == 2, "channels");
@@ -241,9 +238,8 @@ static bool test_extensible_pcm_24bit() {
 
 static bool test_extensible_float_32bit() {
     WAVDecoder decoder;
-    WAVDecoderResult result =
-        decode_header(decoder, test_data::extensible_float_32bit_mono_44100hz,
-                      test_data::extensible_float_32bit_mono_44100hz_len);
+    WAVDecoderResult result = decode_header(decoder, test_data::extensible_float_32bit_mono_44100hz,
+                                            test_data::extensible_float_32bit_mono_44100hz_len);
     CHECK(result == WAV_DECODER_HEADER_READY, "decode result");
     CHECK(decoder.get_audio_format() == WAV_FORMAT_IEEE_FLOAT, "audio format (from subformat)");
     CHECK(decoder.get_channels() == 1, "channels");
@@ -311,8 +307,8 @@ static bool test_decode_pcm_8bit() {
     uint8_t output[4];
     size_t total = 0;
     WAVDecoderResult result =
-        decode_all(decoder, test_data::decode_pcm_8bit_mono,
-                   test_data::decode_pcm_8bit_mono_len, output, sizeof(output), total);
+        decode_all(decoder, test_data::decode_pcm_8bit_mono, test_data::decode_pcm_8bit_mono_len,
+                   output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 4, "4 samples decoded");
     CHECK(decoder.get_bits_per_sample() == 8, "output bps = 8");
@@ -329,8 +325,8 @@ static bool test_decode_pcm_16bit() {
     uint8_t output[6];
     size_t total = 0;
     WAVDecoderResult result =
-        decode_all(decoder, test_data::decode_pcm_16bit_mono,
-                   test_data::decode_pcm_16bit_mono_len, output, sizeof(output), total);
+        decode_all(decoder, test_data::decode_pcm_16bit_mono, test_data::decode_pcm_16bit_mono_len,
+                   output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 3, "3 samples decoded");
     CHECK(decoder.get_bits_per_sample() == 16, "output bps = 16");
@@ -346,8 +342,8 @@ static bool test_decode_pcm_24bit() {
     uint8_t output[6];
     size_t total = 0;
     WAVDecoderResult result =
-        decode_all(decoder, test_data::decode_pcm_24bit_mono,
-                   test_data::decode_pcm_24bit_mono_len, output, sizeof(output), total);
+        decode_all(decoder, test_data::decode_pcm_24bit_mono, test_data::decode_pcm_24bit_mono_len,
+                   output, sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 2, "2 samples decoded");
     CHECK(decoder.get_bits_per_sample() == 24, "output bps = 24");
@@ -358,13 +354,11 @@ static bool test_decode_pcm_24bit() {
 }
 
 static int16_t read_le16(const uint8_t* p) {
-    return static_cast<int16_t>(static_cast<uint16_t>(p[0]) |
-                                (static_cast<uint16_t>(p[1]) << 8));
+    return static_cast<int16_t>(static_cast<uint16_t>(p[0]) | (static_cast<uint16_t>(p[1]) << 8));
 }
 
 static int32_t read_le32(const uint8_t* p) {
-    return static_cast<int32_t>(static_cast<uint32_t>(p[0]) |
-                                (static_cast<uint32_t>(p[1]) << 8) |
+    return static_cast<int32_t>(static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8) |
                                 (static_cast<uint32_t>(p[2]) << 16) |
                                 (static_cast<uint32_t>(p[3]) << 24));
 }
@@ -374,8 +368,8 @@ static bool test_decode_alaw() {
     uint8_t output[8];  // 4 samples x 2 bytes
     size_t total = 0;
     WAVDecoderResult result =
-        decode_all(decoder, test_data::decode_alaw_mono, test_data::decode_alaw_mono_len,
-                   output, sizeof(output), total);
+        decode_all(decoder, test_data::decode_alaw_mono, test_data::decode_alaw_mono_len, output,
+                   sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 4, "4 samples decoded");
     CHECK(decoder.get_bits_per_sample() == 16, "output bps = 16");
@@ -391,15 +385,15 @@ static bool test_decode_mulaw() {
     uint8_t output[8];  // 4 samples x 2 bytes
     size_t total = 0;
     WAVDecoderResult result =
-        decode_all(decoder, test_data::decode_mulaw_mono, test_data::decode_mulaw_mono_len,
-                   output, sizeof(output), total);
+        decode_all(decoder, test_data::decode_mulaw_mono, test_data::decode_mulaw_mono_len, output,
+                   sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 4, "4 samples decoded");
     CHECK(decoder.get_bits_per_sample() == 16, "output bps = 16");
     CHECK(read_le16(output + 0) == 0, "sample 0 = 0");
     CHECK(read_le16(output + 2) == 0, "sample 1 = 0");
-    CHECK(read_le16(output + 4) == 32124, "sample 2 = +32124");
-    CHECK(read_le16(output + 6) == -32124, "sample 3 = -32124");
+    CHECK(read_le16(output + 4) == -32124, "sample 2 = -32124");
+    CHECK(read_le16(output + 6) == 32124, "sample 3 = +32124");
     return true;
 }
 
@@ -408,8 +402,8 @@ static bool test_decode_float() {
     uint8_t output[8];  // 2 samples x 4 bytes
     size_t total = 0;
     WAVDecoderResult result =
-        decode_all(decoder, test_data::decode_float_mono, test_data::decode_float_mono_len,
-                   output, sizeof(output), total);
+        decode_all(decoder, test_data::decode_float_mono, test_data::decode_float_mono_len, output,
+                   sizeof(output), total);
     CHECK(result == WAV_DECODER_END_OF_STREAM || result == WAV_DECODER_SUCCESS, "decode result");
     CHECK(total == 2, "2 samples decoded");
     CHECK(decoder.get_bits_per_sample() == 32, "output bps = 32");
@@ -423,15 +417,14 @@ static bool test_decode_end_of_stream() {
     WAVDecoder decoder;
     uint8_t output[6];
     size_t total = 0;
-    decode_all(decoder, test_data::decode_pcm_16bit_mono,
-               test_data::decode_pcm_16bit_mono_len, output, sizeof(output), total);
+    decode_all(decoder, test_data::decode_pcm_16bit_mono, test_data::decode_pcm_16bit_mono_len,
+               output, sizeof(output), total);
 
     // Next call should return END_OF_STREAM
     size_t consumed = 0;
     size_t decoded = 0;
     uint8_t dummy[2];
-    WAVDecoderResult result =
-        decoder.decode(nullptr, 0, dummy, sizeof(dummy), consumed, decoded);
+    WAVDecoderResult result = decoder.decode(nullptr, 0, dummy, sizeof(dummy), consumed, decoded);
     CHECK(result == WAV_DECODER_END_OF_STREAM, "end of stream after all data consumed");
     CHECK(decoded == 0, "no samples decoded");
     return true;
@@ -555,8 +548,7 @@ static const StreamingTestCase STREAMING_CASES[] = {
     {"extensible_pcm_24bit", test_data::extensible_pcm_24bit_stereo_96000hz,
      test_data::extensible_pcm_24bit_stereo_96000hz_len, WAV_FORMAT_PCM, 2, 96000, 24, 5760},
     {"extensible_float_32bit", test_data::extensible_float_32bit_mono_44100hz,
-     test_data::extensible_float_32bit_mono_44100hz_len, WAV_FORMAT_IEEE_FLOAT, 1, 44100, 32,
-     4410},
+     test_data::extensible_float_32bit_mono_44100hz_len, WAV_FORMAT_IEEE_FLOAT, 1, 44100, 32, 4410},
     {"pcm_fmt_size_18", test_data::pcm_fmt_size_18, test_data::pcm_fmt_size_18_len, WAV_FORMAT_PCM,
      1, 16000, 16, 1000},
 };
@@ -674,8 +666,8 @@ static bool test_incomplete_data() {
     static constexpr size_t PARTIAL_HEADER_SIZE = 10;
     size_t consumed = 0;
     size_t decoded = 0;
-    WAVDecoderResult result = decoder.decode(test_data::pcm_16bit_mono_16000hz,
-                                             PARTIAL_HEADER_SIZE, nullptr, 0, consumed, decoded);
+    WAVDecoderResult result = decoder.decode(test_data::pcm_16bit_mono_16000hz, PARTIAL_HEADER_SIZE,
+                                             nullptr, 0, consumed, decoded);
     CHECK(result == WAV_DECODER_NEED_MORE_DATA, "partial feed returns NEED_MORE_DATA");
     return true;
 }
@@ -685,35 +677,69 @@ static bool test_incomplete_data() {
 // length (read until input runs out), not as immediate end-of-stream.
 // ============================================================================
 
-static bool test_data_chunk_size_zero_streams() {
-    // Hand-crafted minimal PCM 16-bit mono 16 kHz WAV with data chunk size = 0
-    // and three PCM samples (0, +32767, -32768) appended after the header.
-    static constexpr uint8_t SENTINEL_WAV[] = {
-        // RIFF header
-        'R', 'I', 'F', 'F',
-        0x00, 0x00, 0x00, 0x00,  // RIFF size: also 0; should not affect decoder
-        'W', 'A', 'V', 'E',
-        // fmt chunk
-        'f', 'm', 't', ' ',
-        0x10, 0x00, 0x00, 0x00,  // fmt size = 16
-        0x01, 0x00,              // audio format = 1 (PCM)
-        0x01, 0x00,              // channels = 1
-        0x80, 0x3E, 0x00, 0x00,  // sample rate = 16000
-        0x00, 0x7D, 0x00, 0x00,  // byte rate = 32000
-        0x02, 0x00,              // block align = 2
-        0x10, 0x00,              // bits per sample = 16
-        // data chunk header with sentinel size 0
-        'd', 'a', 't', 'a',
-        0x00, 0x00, 0x00, 0x00,  // data chunk size = 0 (streaming sentinel)
-        // Three 16-bit LE PCM samples: 0, +32767, -32768
-        0x00, 0x00,
-        0xFF, 0x7F,
-        0x00, 0x80,
-    };
-    static constexpr size_t SENTINEL_WAV_LEN = sizeof(SENTINEL_WAV);
-    static constexpr size_t HEADER_LEN = 44;
-    static constexpr size_t PCM_BYTES = SENTINEL_WAV_LEN - HEADER_LEN;
+// Hand-crafted minimal PCM 16-bit mono 16 kHz WAV with data chunk size = 0
+// and three PCM samples (0, +32767, -32768) appended after the header.
+static constexpr uint8_t SENTINEL_WAV[] = {
+    // RIFF header
+    'R',
+    'I',
+    'F',
+    'F',
+    0x00,
+    0x00,
+    0x00,
+    0x00,  // RIFF size: also 0; should not affect decoder
+    'W',
+    'A',
+    'V',
+    'E',
+    // fmt chunk
+    'f',
+    'm',
+    't',
+    ' ',
+    0x10,
+    0x00,
+    0x00,
+    0x00,  // fmt size = 16
+    0x01,
+    0x00,  // audio format = 1 (PCM)
+    0x01,
+    0x00,  // channels = 1
+    0x80,
+    0x3E,
+    0x00,
+    0x00,  // sample rate = 16000
+    0x00,
+    0x7D,
+    0x00,
+    0x00,  // byte rate = 32000
+    0x02,
+    0x00,  // block align = 2
+    0x10,
+    0x00,  // bits per sample = 16
+    // data chunk header with sentinel size 0
+    'd',
+    'a',
+    't',
+    'a',
+    0x00,
+    0x00,
+    0x00,
+    0x00,  // data chunk size = 0 (streaming sentinel)
+    // Three 16-bit LE PCM samples: 0, +32767, -32768
+    0x00,
+    0x00,
+    0xFF,
+    0x7F,
+    0x00,
+    0x80,
+};
+static constexpr size_t SENTINEL_WAV_LEN = sizeof(SENTINEL_WAV);
+static constexpr size_t HEADER_LEN = 44;
+static constexpr size_t PCM_BYTES = SENTINEL_WAV_LEN - HEADER_LEN;
 
+static bool test_data_chunk_size_zero_streams() {
     WAVDecoder decoder;
     size_t pos = 0;
 
@@ -733,8 +759,7 @@ static bool test_data_chunk_size_zero_streams() {
     CHECK(result == WAV_DECODER_HEADER_READY, "header ready reached");
     // Sentinel zero is normalized to UINT32_MAX so the decoder treats the data
     // section as unbounded instead of immediately ending.
-    CHECK(decoder.get_data_chunk_size() == UINT32_MAX,
-          "sentinel zero normalized to UINT32_MAX");
+    CHECK(decoder.get_data_chunk_size() == UINT32_MAX, "sentinel zero normalized to UINT32_MAX");
 
     // Audio phase: decode the trailing PCM samples
     uint8_t output[PCM_BYTES];
@@ -742,9 +767,9 @@ static bool test_data_chunk_size_zero_streams() {
     while (pos < SENTINEL_WAV_LEN) {
         size_t consumed = 0;
         size_t decoded = 0;
-        result = decoder.decode(SENTINEL_WAV + pos, SENTINEL_WAV_LEN - pos,
-                                output + total_decoded * 2, sizeof(output) - total_decoded * 2,
-                                consumed, decoded);
+        result =
+            decoder.decode(SENTINEL_WAV + pos, SENTINEL_WAV_LEN - pos, output + total_decoded * 2,
+                           sizeof(output) - total_decoded * 2, consumed, decoded);
         pos += consumed;
         total_decoded += decoded;
         if (result != WAV_DECODER_SUCCESS) {
@@ -764,6 +789,44 @@ static bool test_data_chunk_size_zero_streams() {
     result = decoder.decode(nullptr, 0, dummy, sizeof(dummy), consumed, decoded);
     CHECK(result == WAV_DECODER_NEED_MORE_DATA,
           "sentinel-zero stream stays open after input exhausted");
+    return true;
+}
+
+// Regression test: the sentinel maps data_bytes_remaining_ to UINT32_MAX, and
+// decode() counts it down per consumed byte, so a stream running longer than
+// UINT32_MAX bytes (~4 GiB) used to falsely return END_OF_STREAM. decode() must
+// replenish the countdown at the start of every audio-phase call.
+static bool test_data_chunk_size_zero_counter_replenished() {
+    WAVDecoder decoder;
+    size_t pos = 0;
+
+    // Header phase
+    WAVDecoderResult result = WAV_DECODER_NEED_MORE_DATA;
+    while (pos < SENTINEL_WAV_LEN && result == WAV_DECODER_NEED_MORE_DATA) {
+        size_t consumed = 0;
+        size_t decoded = 0;
+        result = decoder.decode(SENTINEL_WAV + pos, SENTINEL_WAV_LEN - pos, nullptr, 0, consumed,
+                                decoded);
+        pos += consumed;
+    }
+    CHECK(result == WAV_DECODER_HEADER_READY, "header ready");
+
+    // Decode the trailing PCM bytes; the countdown decrements within the call.
+    uint8_t output[PCM_BYTES];
+    size_t consumed = 0;
+    size_t decoded = 0;
+    result = decoder.decode(SENTINEL_WAV + pos, SENTINEL_WAV_LEN - pos, output, sizeof(output),
+                            consumed, decoded);
+    CHECK(result == WAV_DECODER_SUCCESS, "audio decoded");
+    CHECK(consumed == PCM_BYTES, "all audio bytes consumed");
+    CHECK(decoder.get_bytes_remaining() == UINT32_MAX - PCM_BYTES,
+          "countdown decremented within the call");
+
+    // The next call replenishes the countdown before anything else, so the
+    // cumulative decrement can never reach zero across calls.
+    result = decoder.decode(nullptr, 0, output, sizeof(output), consumed, decoded);
+    CHECK(result == WAV_DECODER_NEED_MORE_DATA, "stream stays open");
+    CHECK(decoder.get_bytes_remaining() == UINT32_MAX, "countdown replenished on next call");
     return true;
 }
 
@@ -812,6 +875,7 @@ int main() {
     RUN_TEST(test_reset);
     RUN_TEST(test_incomplete_data);
     RUN_TEST(test_data_chunk_size_zero_streams);
+    RUN_TEST(test_data_chunk_size_zero_counter_replenished);
 
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return tests_passed == tests_run ? EXIT_SUCCESS : EXIT_FAILURE;

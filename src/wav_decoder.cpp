@@ -101,7 +101,9 @@ static int16_t decode_mulaw_sample(uint8_t mu_val) {
     int magnitude = ((mantissa << 3) + MULAW_BIAS) << exponent;
     magnitude -= MULAW_BIAS;
     int16_t result = static_cast<int16_t>(magnitude);
-    return (mu_val & G711_SIGN_BIT) ? result : static_cast<int16_t>(-result);
+    // After the initial complement, a set sign bit means the original sample was
+    // negative, the opposite of A-law's convention after its XOR unmask.
+    return (mu_val & G711_SIGN_BIT) ? static_cast<int16_t>(-result) : result;
 }
 
 // NOTE: Assumes the host platform uses little-endian IEEE 754 floats.
@@ -257,6 +259,13 @@ WAVDecoderResult WAVDecoder::decode(const uint8_t* input, size_t input_len, uint
 
     // Audio decoding phase
     bytes_consumed = 0;
+
+    // Unknown-length stream (see get_data_chunk_size()): replenish the countdown
+    // every call so it never reaches zero, which would falsely signal
+    // END_OF_STREAM after UINT32_MAX consumed bytes (~4 GiB).
+    if (this->data_chunk_size_ == UINT32_MAX) {
+        this->data_bytes_remaining_ = UINT32_MAX;
+    }
 
     // Null input with zero length: nothing to feed, return current status
     if (input == nullptr) {
