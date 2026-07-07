@@ -15,6 +15,7 @@
 #include "micro_wav/wav_decoder.h"
 #include "wav_test_data.h"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
